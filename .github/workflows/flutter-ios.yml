@@ -1,0 +1,128 @@
+name: Flutter iOS IPA
+
+# Flutter 双端工程（NewTv 改造版）的 iOS 出包流水线。
+# 产物：Artifacts → NewTv-unsigned-ipa（未签名，Sideloadly / TrollStore 自签）
+#
+# 关键点：iOS 的爬虫层跑在 NodeMobile.xcframework 里，必须先把 49MB 的
+# framework 放进 ios/Frameworks/，再用 ruby 脚本 link 进 Runner.xcodeproj，
+# 否则 NodeJSBridge.swift 链接不到 node_start / node_exit。
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'ios/**'
+      - 'pubspec.yaml'
+      - '.github/workflows/flutter-ios.yml'
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 90
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          ls -d /Applications/Xcode*.app 2>/dev/null || true
+          PICK=""
+          for v in 16.4 16.3 16.2 16.1 16.0 15.4; do
+            if [ -d "/Applications/Xcode_${v}.app" ]; then PICK="/Applications/Xcode_${v}.app"; break; fi
+          done
+          [ -z "$PICK" ] && PICK="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | head -1)"
+          if [ -n "$PICK" ]; then sudo xcode-select -s "$PICK/Contents/Developer"; fi
+          xcodebuild -version
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: 'stable'
+          cache: true
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile', 'pubspec.yaml') }}
+          restore-keys: pods-${{ runner.os }}-
+
+      - name: Fetch NodeMobile.xcframework
+        run: |
+          set -e
+          mkdir -p ios/Frameworks
+          URL="https://github.com/nodejs-mobile/nodejs-mobile/releases/download/v18.20.4/nodejs-mobile-v18.20.4-ios.zip"
+          curl -fL --retry 3 --retry-delay 5 -o /tmp/nodeios.zip "$URL"
+          unzip -q /tmp/nodeios.zip -d /tmp/nodeios
+          echo "--- 解压内容 ---"
+          find /tmp/nodeios -maxdepth 2 -name "*.xcframework" -o -maxdepth 2 -type d | head
+          XCF=$(find /tmp/nodeios -maxdepth 3 -name "NodeMobile.xcframework" -type d | head -1)
+          [ -n "$XCF" ] || { echo "✗ 没找到 NodeMobile.xcframework"; ls -R /tmp/nodeios | head -30; exit 1; }
+          rm -rf ios/Frameworks/NodeMobile.xcframework
+          cp -R "$XCF" ios/Frameworks/
+          du -sh ios/Frameworks/NodeMobile.xcframework
+          ls ios/Frameworks/NodeMobile.xcframework
+
+      - name: Link NodeMobile into Xcode project
+        run: |
+          gem install xcodeproj --no-document
+          cd ios
+          ruby scripts/add_nodemobile.rb --xcframework Frameworks/NodeMobile.xcframework
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Pod install
+        working-directory: ios
+        run: pod install --repo-update
+
+      - name: Build iOS (no codesign)
+        run: |
+          flutter build ios --release --no-codesign 2>&1 | tail -60
+
+      - name: Package IPA
+        run: |
+          set -e
+          APP="build/ios/iphoneos/Runner.app"
+          [ -d "$APP" ] || { echo "✗ 没找到 $APP"; ls build/ios 2>/dev/null; exit 1; }
+          BIN="$APP/Runner"
+          [ -f "$BIN" ] || { echo "✗ 主二进制缺失"; exit 1; }
+          SIZE=$(wc -c < "$BIN" | tr -d ' ')
+          echo "主二进制 $(($SIZE/1024)) KB"
+          [ "$SIZE" -lt 300000 ] && { echo "✗ 二进制太小，是空壳"; exit 1; }
+          # NodeMobile 必须在包里，否则跑起来立刻崩
+          ls "$APP/Frameworks" | grep -qi nodemobile || { echo "✗ Runner.app 里没有 NodeMobile.framework"; ls "$APP/Frameworks"; exit 1; }
+
+          rm -rf build/ipa && mkdir -p build/ipa/Payload
+          cp -R "$APP" build/ipa/Payload/
+          rm -rf build/ipa/Payload/Runner.app/_CodeSignature
+          cd build/ipa && zip -qry ../NewTv-unsigned.ipa Payload
+          cd ../..
+          ls -lh build/NewTv-unsigned.ipa
+
+      - name: Upload IPA
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NewTv-unsigned-ipa
+          path: build/NewTv-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs
+          path: |
+            ios/Pods/Target Support Files/
+            build/ios/iphoneos/
+          if-no-files-found: ignore
+          retention-days: 7
