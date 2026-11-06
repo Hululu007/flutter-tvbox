@@ -165,3 +165,7 @@ build/
 /ANGLE.7z
 
 test*
+# libnode 二进制（60MB/ABI），由 tools/fetch_libnode.sh 在构建前拉取
+/android/app/src/main/cpp/libnode/
+/android/app/src/main/jniLibs/
+/android/app/src/main/assets/nodejs-project/
