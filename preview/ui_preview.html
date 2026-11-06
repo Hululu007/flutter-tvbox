@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flutter 双端 · 界面效果图</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{
+    background:#08080a;min-height:100vh;color:#fff;padding:44px 24px 60px;
+    font-family:-apple-system,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  .head{text-align:center;margin-bottom:36px}
+  .head h1{font-size:19px;font-weight:700;letter-spacing:.3px}
+  .head p{margin-top:8px;font-size:12.5px;color:#6A6A72}
+
+  .screens{display:flex;gap:44px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .cap{font-size:12px;color:#6A6A72;letter-spacing:.4px}
+
+  .phone{
+    width:390px;height:844px;border-radius:44px;position:relative;
+    background:#000;overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.08);
+  }
+  .bg{
+    position:absolute;inset:0;
+    background:
+      radial-gradient(120% 55% at 18% -5%,rgba(62,99,255,.20) 0%,transparent 58%),
+      radial-gradient(110% 45% at 92% 8%,rgba(138,92,255,.16) 0%,transparent 55%),
+      #000;
+  }
+  .status{
+    position:relative;height:54px;display:flex;align-items:flex-end;justify-content:space-between;
+    padding:0 26px 7px;font-size:13px;font-weight:600;letter-spacing:.2px;z-index:5;
+  }
+  .status .r{display:flex;gap:6px;align-items:center;font-size:10.5px;opacity:.9}
+  .body{position:relative;height:calc(100% - 54px);display:flex;flex-direction:column;z-index:2}
+
+  /* ================= 首页 ================= */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 10px}
+  .brand{display:flex;align-items:center;gap:8px}
+  .logo{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#3E63FF,#8A5CFF);box-shadow:0 4px 14px rgba(62,99,255,.45)}
+  .bname{font-size:16px;font-weight:800;letter-spacing:.3px}
+  .srcbtn{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.08);font-size:12px;color:#A0A0A8}
+  .srcbtn b{color:#fff;font-weight:600}
+
+  .search{
+    margin:0 16px 12px;height:42px;border-radius:21px;background:#111114;
+    border:.5px solid rgba(255,255,255,.08);display:flex;align-items:center;padding:0 14px;gap:9px;
+    font-size:13px;color:#6A6A72;
+  }
+
+  .tabs{display:flex;gap:22px;padding:0 16px 10px;overflow:hidden}
+  .tab{position:relative;padding-bottom:9px;font-size:14px;color:#A0A0A8;font-weight:500;white-space:nowrap}
+  .tab.on{color:#fff;font-weight:800}
+  .tab.on::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:20px;height:3px;border-radius:2px;background:linear-gradient(90deg,#3E63FF,#8A5CFF)}
+
+  /* ===== 主视觉轮播 ===== */
+  .hero-wrap{padding:0 16px 10px}
+  .hero{
+    position:relative;width:100%;aspect-ratio:2/1;border-radius:14px;overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,.55);
+  }
+  .hero-art{position:absolute;inset:0;background:linear-gradient(150deg,#2a3a6b,#0d1320 52%,#2a1a4a)}
+  .hero-art::after{
+    content:'';position:absolute;inset:0;
+    background:
+      linear-gradient(110deg,rgba(62,99,255,.18),transparent 45%,rgba(138,92,255,.14));
+  }
+  .hero-fade{
+    position:absolute;left:0;right:0;bottom:0;height:62%;
+    background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 45%,rgba(0,0,0,.86) 100%);
+  }
+  .hero-cap{position:absolute;left:14px;right:76px;bottom:12px}
+  .hero-title{
+    font-size:20px;font-weight:800;line-height:1.2;letter-spacing:.2px;
+    text-shadow:0 1px 8px rgba(0,0,0,.55);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .hero-sub{
+    margin-top:5px;font-size:12px;font-weight:500;color:rgba(255,255,255,.72);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .hero-dots{position:absolute;right:14px;bottom:16px;display:flex;align-items:center;gap:5px}
+  .hero-dots i{width:5px;height:5px;border-radius:3px;background:rgba(255,255,255,.42);display:block}
+  .hero-dots i.on{width:14px;background:linear-gradient(90deg,#3E63FF,#8A5CFF)}
+
+  .grid{flex:1;overflow:hidden;padding:2px 16px 118px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px 8px;align-content:start}
+  .card{display:flex;flex-direction:column}
+  .poster{position:relative;width:100%;aspect-ratio:1/1.47;border-radius:8px;overflow:hidden;background:#16161a}
+  .poster::after{content:'';position:absolute;left:0;right:0;bottom:0;height:46px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.55))}
+  .p1{background:linear-gradient(150deg,#1e2a4a,#0d1320 55%,#1a1030)}
+  .p2{background:linear-gradient(150deg,#3a1f2e,#130a12 60%,#2a1520)}
+  .p3{background:linear-gradient(150deg,#1b3040,#0a1418 60%,#12242b)}
+  .p4{background:linear-gradient(150deg,#2e2a1c,#141208 60%,#241f12)}
+  .p5{background:linear-gradient(150deg,#241a3a,#0e0918 60%,#1a1230)}
+  .p6{background:linear-gradient(150deg,#1a2e2a,#08120f 60%,#12241f)}
+  .note{position:absolute;right:6px;bottom:6px;z-index:2;padding:2.5px 6px;border-radius:7px;background:rgba(0,0,0,.55);font-size:10px;font-weight:600;line-height:1.2}
+  .cname{margin-top:6px;text-align:center;font-size:12.5px;font-weight:500;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .cmeta{margin-top:1px;text-align:center;font-size:11px;color:#6A6A72}
+
+  .navbar{
+    position:absolute;left:14px;right:14px;bottom:22px;height:62px;border-radius:31px;
+    background:rgba(18,18,20,.94);border:.5px solid rgba(255,255,255,.07);
+    box-shadow:0 12px 34px rgba(0,0,0,.7);display:flex;align-items:center;justify-content:space-around;
+    padding:0 8px;backdrop-filter:blur(18px);z-index:10;
+  }
+  .nav{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 14px;border-radius:18px;font-size:10px;color:rgba(255,255,255,.35);font-weight:500}
+  .nav.on{background:linear-gradient(90deg,#3E63FF,#8A5CFF);color:#fff;font-weight:600;box-shadow:0 3px 14px rgba(62,99,255,.4)}
+  .ico{width:18px;height:18px;display:block}
+  .ico path,.ico circle,.ico rect,.ico line,.ico polyline{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ================= 详情页 ================= */
+  .hero{position:relative;height:322px;flex:none;overflow:hidden}
+  .hero .art{position:absolute;inset:0;background:linear-gradient(160deg,#1e2a4a,#0d1320 45%,#1a1030)}
+  .hero .fade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 35%,rgba(0,0,0,.5) 78%,#000 100%)}
+  .back{
+    position:absolute;top:14px;left:16px;width:34px;height:34px;border-radius:17px;
+    background:rgba(0,0,0,.45);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:3;
+  }
+  .back svg{width:17px;height:17px}
+  .back svg path{stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  .dwrap{flex:1;overflow:hidden;margin-top:-56px;position:relative;z-index:2;padding:0 16px}
+  .drow{display:flex;gap:14px}
+  .dposter{width:96px;height:141px;border-radius:10px;flex:none;background:linear-gradient(150deg,#233055,#101726 55%,#1d1236);box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  .dinfo{flex:1;min-width:0;padding-top:58px}
+  .dtitle{font-size:19px;font-weight:800;line-height:1.25}
+  .dmeta{margin-top:7px;font-size:12px;color:#A0A0A8;line-height:1.6}
+  .score{display:flex;align-items:center;gap:6px;margin-top:8px}
+  .score .v{font-size:16px;font-weight:800;color:#F5C451}
+  .score .l{font-size:11px;color:#6A6A72}
+
+  .playbtn{
+    margin:16px 0 0;height:46px;border-radius:12px;
+    background:linear-gradient(90deg,#3E63FF,#8A5CFF);
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    font-size:15px;font-weight:700;box-shadow:0 8px 24px rgba(62,99,255,.35);
+  }
+  .playbtn svg{width:17px;height:17px}
+  .playbtn svg path{fill:#fff}
+
+  .sec{margin-top:20px}
+  .sec h4{font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .sec h4::before{content:'';width:3px;height:12px;border-radius:2px;background:linear-gradient(180deg,#3E63FF,#8A5CFF)}
+  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{padding:7px 15px;border-radius:20px;font-size:12.5px;background:rgba(255,255,255,.06);color:#A0A0A8;font-weight:500}
+  .pill.on{background:linear-gradient(90deg,#3E63FF,#8A5CFF);color:#fff;font-weight:600}
+  .eps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .ep{
+    height:36px;border-radius:9px;background:rgba(255,255,255,.06);
+    display:flex;align-items:center;justify-content:center;font-size:12.5px;color:#A0A0A8;
+  }
+  .ep.on{background:rgba(62,99,255,.18);color:#fff;font-weight:600;box-shadow:inset 0 0 0 1px rgba(62,99,255,.55)}
+  .desc{margin-top:18px;font-size:12.5px;line-height:1.75;color:#A0A0A8;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* ================= 播放页 ================= */
+  .playerbox{height:242px;background:#000;position:relative;flex:none;display:flex;align-items:center;justify-content:center}
+  .playerbox .pic{position:absolute;inset:0;background:linear-gradient(160deg,#1a2440,#0a0f18 60%,#161029)}
+  .playbig{position:relative;width:56px;height:56px;border-radius:28px;background:rgba(255,255,255,.14);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.18)}
+  .playbig svg{width:22px;height:22px;margin-left:3px}
+  .playbig svg path{fill:#fff}
+  .ctrl{position:absolute;left:0;right:0;bottom:0;padding:0 14px 12px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.75))}
+  .bar{height:3px;border-radius:2px;background:rgba(255,255,255,.22);position:relative;margin:14px 0 8px}
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;width:34%;border-radius:2px;background:linear-gradient(90deg,#3E63FF,#8A5CFF)}
+  .bar .dot{position:absolute;left:34%;top:50%;width:10px;height:10px;border-radius:5px;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 0 4px rgba(62,99,255,.25)}
+  .cbtns{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#A0A0A8}
+  .cbtns .l{display:flex;gap:16px;align-items:center}
+  .cbtns svg{width:16px;height:16px}
+  .cbtns svg path,.cbtns svg rect{stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round}
+
+  .pbody{flex:1;padding:14px 16px 0;overflow:hidden}
+  .prowtitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .prowtitle .t{font-size:16px;font-weight:700}
+  .prowtitle .s{font-size:11.5px;color:#6A6A72}
+  .plist{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+  .plist .ep{height:34px;font-size:12px}
+
+  /* ================= 备注 ================= */
+  .legend{max-width:1240px;margin:46px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .lg{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px 20px}
+  .lg h3{font-size:13px;font-weight:700;margin-bottom:10px}
+  .lg p{font-size:12px;line-height:1.85;color:#A0A0A8}
+  .lg code{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#8ab4ff;background:rgba(62,99,255,.1);padding:1px 5px;border-radius:4px}
+  .sw{display:flex;gap:8px;margin-top:12px}
+  .sw i{width:34px;height:34px;border-radius:9px;border:1px solid rgba(255,255,255,.1);display:block}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>Flutter 双端 · 界面效果图</h1>
+  <p>iOS / Android 共用一套 Dart 渲染 · 390×844 基准 · 纯黑底 + 蓝紫渐变</p>
+</div>
+
+<div class="screens">
+
+  <!-- ============ 首页 ============ -->
+  <div class="col">
+    <div class="phone">
+      <div class="bg"></div>
+      <div class="status"><span>9:41</span><span class="r">5G ▮▮▮ 100%</span></div>
+      <div class="body">
+        <div class="topbar">
+          <div class="brand"><div class="logo"></div><div class="bname">影视</div></div>
+          <div class="srcbtn">线路 <b>饭太硬</b> ▾</div>
+        </div>
+
+        <div class="search">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6A6A72" stroke-width="1.8">
+            <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5" stroke-linecap="round"/>
+          </svg>
+          <span>搜索影片、演员、导演...</span>
+        </div>
+
+        <div class="tabs">
+          <div class="tab on">推荐</div><div class="tab">电影</div><div class="tab">电视剧</div>
+          <div class="tab">综艺</div><div class="tab">动漫</div>
+        </div>
+
+        <div class="hero-wrap">
+          <div class="hero">
+            <div class="hero-art"></div>
+            <div class="hero-fade"></div>
+            <div class="hero-cap">
+              <div class="hero-title">庆余年 第二季</div>
+              <div class="hero-sub">更新至36集 · 国产剧 · 2024</div>
+            </div>
+            <div class="hero-dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card"><div class="poster p1"><div class="note">更新至36集</div></div><div class="cname">庆余年 第二季</div><div class="cmeta">国产剧 · 2024</div></div>
+          <div class="card"><div class="poster p2"><div class="note">8.7</div></div><div class="cname">繁花</div><div class="cmeta">国产剧 · 2023</div></div>
+          <div class="card"><div class="poster p3"><div class="note">HD</div></div><div class="cname">沙丘 2</div><div class="cmeta">科幻片 · 2024</div></div>
+          <div class="card"><div class="poster p4"><div class="note">全24集</div></div><div class="cname">漫长的季节</div><div class="cmeta">国产剧 · 2023</div></div>
+          <div class="card"><div class="poster p5"><div class="note">9.1</div></div><div class="cname">奥本海默</div><div class="cmeta">传记片 · 2023</div></div>
+          <div class="card"><div class="poster p6"><div class="note">更新至12集</div></div><div class="cname">三体</div><div class="cmeta">国产剧 · 2023</div></div>
+        </div>
+
+        <div class="navbar">
+          <div class="nav on">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg>首页
+          </div>
+          <div class="nav">
+            <svg class="ico" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M8 2.5L12 6l4-3.5"/></svg>直播
+          </div>
+          <div class="nav">
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.4 2"/></svg>历史
+          </div>
+          <div class="nav">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-9a4 4 0 017-2.6A4 4 0 0119 11c0 4.5-7 9-7 9z"/></svg>收藏
+          </div>
+          <div class="nav">
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.5 15.5a1.6 1.6 0 00.3 1.8 2 2 0 11-2.8 2.8 1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5 2 2 0 11-4 0 1.6 1.6 0 00-1-1.5 1.6 1.6 0 00-1.8.3 2 2 0 11-2.8-2.8 1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1 2 2 0 110-4 1.6 1.6 0 001.5-1 1.6 1.6 0 00-.3-1.8 2 2 0 112.8-2.8 1.6 1.6 0 001.8.3 1.6 1.6 0 001-1.5 2 2 0 114 0 1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3 2 2 0 112.8 2.8 1.6 1.6 0 00-.3 1.8 1.6 1.6 0 001.5 1 2 2 0 110 4 1.6 1.6 0 00-1.5 1z"/></svg>设置
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">首页 · 主视觉轮播 + 海报网格 + 悬浮导航</div>
+  </div>
+
+  <!-- ============ 详情页 ============ -->
+  <div class="col">
+    <div class="phone">
+      <div class="bg"></div>
+      <div class="status"><span>9:41</span><span class="r">5G ▮▮▮ 100%</span></div>
+      <div class="body" style="height:calc(100% - 54px)">
+        <div class="hero">
+          <div class="art"></div>
+          <div class="fade"></div>
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></div>
+        </div>
+
+        <div class="dwrap">
+          <div class="drow">
+            <div class="dposter"></div>
+            <div class="dinfo">
+              <div class="dtitle">庆余年 第二季</div>
+              <div class="dmeta">2024 · 国产剧 · 更新至36集</div>
+              <div class="score"><span class="v">8.4</span><span class="l">豆瓣</span></div>
+            </div>
+          </div>
+
+          <div class="playbtn">
+            <svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>
+            立即播放
+          </div>
+
+          <div class="sec">
+            <h4>线路</h4>
+            <div class="pills">
+              <div class="pill on">线路1</div>
+              <div class="pill">线路2</div>
+              <div class="pill">线路3</div>
+            </div>
+          </div>
+
+          <div class="sec">
+            <h4>选集 <span style="font-size:11px;color:#6A6A72;font-weight:400">共 36 集</span></h4>
+            <div class="eps">
+              <div class="ep on">01</div><div class="ep">02</div><div class="ep">03</div><div class="ep">04</div>
+              <div class="ep">05</div><div class="ep">06</div><div class="ep">07</div><div class="ep">08</div>
+              <div class="ep">09</div><div class="ep">10</div><div class="ep">11</div><div class="ep">12</div>
+            </div>
+          </div>
+
+          <div class="desc">范闲在庆国朝堂步步为营，与林婉儿成婚后卷入更深的政治漩涡。北齐、东夷城、庆国三方势力暗流涌动，而他真正的身世也逐渐浮出水面……</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">详情 · 渐变播放按钮 + 线路胶囊 + 选集</div>
+  </div>
+
+  <!-- ============ 播放页 ============ -->
+  <div class="col">
+    <div class="phone">
+      <div class="bg"></div>
+      <div class="status"><span>9:41</span><span class="r">5G ▮▮▮ 100%</span></div>
+      <div class="body">
+        <div class="playerbox">
+          <div class="pic"></div>
+          <div class="playbig"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></div>
+          <div class="ctrl">
+            <div class="bar"><div class="fill"></div><div class="dot"></div></div>
+            <div class="cbtns">
+              <div class="l">
+                <svg viewBox="0 0 24 24"><path d="M6 5v14"/><path d="M18 5l-9 7 9 7z"/></svg>
+                <span>12:04 / 45:20</span>
+              </div>
+              <div class="l">
+                <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pbody">
+          <div class="prowtitle">
+            <div class="t">庆余年 第二季</div>
+            <div class="s">线路1 · 第 01 集</div>
+          </div>
+          <div class="plist">
+            <div class="ep on">01</div><div class="ep">02</div><div class="ep">03</div><div class="ep">04</div><div class="ep">05</div>
+            <div class="ep">06</div><div class="ep">07</div><div class="ep">08</div><div class="ep">09</div><div class="ep">10</div>
+            <div class="ep">11</div><div class="ep">12</div><div class="ep">13</div><div class="ep">14</div><div class="ep">15</div>
+          </div>
+        </div>
+
+        <div class="navbar">
+          <div class="nav">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg>首页
+          </div>
+          <div class="nav">
+            <svg class="ico" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M8 2.5L12 6l4-3.5"/></svg>直播
+          </div>
+          <div class="nav on">
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.4 2"/></svg>历史
+          </div>
+          <div class="nav">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-9a4 4 0 017-2.6A4 4 0 0119 11c0 4.5-7 9-7 9z"/></svg>收藏
+          </div>
+          <div class="nav">
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.5 15.5a1.6 1.6 0 00.3 1.8 2 2 0 11-2.8 2.8 1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5 2 2 0 11-4 0 1.6 1.6 0 00-1-1.5 1.6 1.6 0 00-1.8.3 2 2 0 11-2.8-2.8 1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1 2 2 0 110-4 1.6 1.6 0 001.5-1 1.6 1.6 0 00-.3-1.8 2 2 0 112.8-2.8 1.6 1.6 0 001.8.3 1.6 1.6 0 001-1.5 2 2 0 114 0 1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3 2 2 0 112.8 2.8 1.6 1.6 0 00-.3 1.8 1.6 1.6 0 001.5 1 2 2 0 110 4 1.6 1.6 0 00-1.5 1z"/></svg>设置
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">播放 · 渐变进度条 + 底部选集</div>
+  </div>
+
+</div>
+
+<div class="legend">
+  <div class="lg">
+    <h3>配色</h3>
+    <p>强调色统一成蓝紫渐变，所有选中态（导航、线路、选集、进度条、播放按钮）同一色相，不做多色。<br>背景纯黑 <code>#000</code>，靠两层径向渐变出层次，不用"更亮的灰"分块——OLED 上灰底会发闷。</p>
+    <div class="sw">
+      <i style="background:#000"></i>
+      <i style="background:linear-gradient(135deg,#3E63FF,#8A5CFF)"></i>
+      <i style="background:#111114"></i>
+      <i style="background:#1A1A1D"></i>
+      <i style="background:#F5C451"></i>
+    </div>
+  </div>
+  <div class="lg">
+    <h3>版式</h3>
+    <p>首页顶部加 2:1 主视觉轮播（358×179，圆角 14），自动 4.5s 切换，指示点选中拉长成 14×5 胶囊；手动滑动后重置计时。<br>
+    轮播只在「推荐」出现，选了分类就是纯列表。<br>
+    三列海报，列距 8，图比 1.47，评分/更新进度做成图内右下角胶囊，片名居中两行。<br>
+    搜索条 42 高 / 21 圆角；分类栏改成「文字 + 20×3 渐变下划线」，不用胶囊 chip——首页已经有搜索胶囊和悬浮导航，再加一排胶囊会显得块状堆叠。</p>
+  </div>
+  <div class="lg">
+    <h3>双端</h3>
+    <p>同一套 <code>lib/</code> 出 iOS 和 Android。<br>
+    iOS 内嵌 NodeMobile，<code>csp_xxx</code> js 源可跑；Android 无 libnode，走降级——<code>type=1</code> 苹果CMS 由 Dart 直连，照常可用。你手上那些采集站基本都是 type=1。</p>
+  </div>
+</div>
+
+</body>
+</html>
