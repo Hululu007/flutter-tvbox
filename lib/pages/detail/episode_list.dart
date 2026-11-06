@@ -49,7 +49,7 @@ class EpisodeListView extends StatelessWidget {
             ),
             child: Text(
               _groupTitle(g, groups[g].length),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: AppTheme.fontSubhead,
                 fontWeight: FontWeight.w600,
