@@ -73,10 +73,17 @@ if [ "$ALL_ABI" = "true" ]; then
         fi
     done
 else
-    # 只保留 arm64-v8a：现在真机基本全是这个，留两个 ABI 会让 APK 多 25MB
-    mkdir -p "$DEST/bin/arm64-v8a" "$JNI/arm64-v8a"
-    cp "$SRC/bin/arm64-v8a/libnode.so" "$DEST/bin/arm64-v8a/"
-    cp "$SRC/bin/arm64-v8a/libnode.so" "$JNI/arm64-v8a/"
+    # 默认拉两个真机 ABI。
+    # 为什么不是只留 arm64：AGP 的 externalNativeBuild 会为 flutter 插件
+    # 声明的每个 ABI 都跑一次 configure，即便 build 命令加了
+    # --target-platform android-arm64，armeabi-v7a 那趟也会执行，
+    # 只放 arm64 会在 configure 阶段 FATAL_ERROR。
+    # 打包时 Flutter 仍然只把 arm64 塞进 APK，多出来的只是编译时间。
+    for abi in arm64-v8a armeabi-v7a; do
+        mkdir -p "$DEST/bin/$abi" "$JNI/$abi"
+        cp "$SRC/bin/$abi/libnode.so" "$DEST/bin/$abi/"
+        cp "$SRC/bin/$abi/libnode.so" "$JNI/$abi/"
+    done
 fi
 
 echo ""
