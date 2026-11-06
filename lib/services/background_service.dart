@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import '../common/theme.dart';
 
 /// 背景选择类型
 enum BackgroundChoice {
@@ -184,6 +185,30 @@ class BackgroundService extends GetxService {
     double overlayAlpha = 0.3,
     Widget? child,
   }) {
+    // 浅色模式：深色渐变全部作废，换成浅底 + 两团极淡的品牌色光晕。
+    // 毛玻璃必须有东西可透，纯白平底会让玻璃层完全看不出来。
+    if (!AppTheme.isDark) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(color: AppTheme.backgroundPrimary),
+          Positioned(
+            top: -150,
+            right: -110,
+            child: _buildCircle(
+                size: 400, color: const Color(0x1F3E63FF)),
+          ),
+          Positioned(
+            bottom: -170,
+            left: -130,
+            child: _buildCircle(
+                size: 440, color: const Color(0x1A8A5CFF)),
+          ),
+          if (child != null) child,
+        ],
+      );
+    }
+
     return Obx(() {
       // 自定义图片模式
       if (choice.value == BackgroundChoice.custom &&
