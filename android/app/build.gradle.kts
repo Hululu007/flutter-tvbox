@@ -24,12 +24,13 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // libnode 只有 arm64-v8a / armeabi-v7a / x86_64 三个 ABI 的预编译产物，
-        // 这里只打 arm64 —— 真机基本全是它，留两个 ABI 会让 APK 多 25MB
-        ndk {
-            abiFilters.add("arm64-v8a")
-        }
-
+        // libnode 预编译产物有 arm64-v8a / armeabi-v7a / x86_64 三个 ABI。
+        // 这里不设 abiFilters —— jniLibs 里放哪个 ABI 就打哪个，
+        // 配合 CI 的 --split-per-abi 按 ABI 拆成独立 APK：
+        //   arm64-v8a    真机
+        //   x86_64       MuMu/雷电等模拟器（它们的 ARM 转译层跑不动
+        //                libnode 这种 60MB 的 V8 引擎，起 node 必崩）
+        // externalNativeBuild 的 CMake 对缺失 ABI 已改为跳过不报错。
         externalNativeBuild {
             cmake {
                 // libnode.so 是用 c++_shared 编的，必须同一个 STL
