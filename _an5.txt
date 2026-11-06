@@ -1,0 +1,559 @@
+Resolving dependencies...
+Downloading packages...
+  archive 3.6.1 (4.6.0 available)
+  battery_plus 6.2.3 (7.1.2 available)
+  cached_network_image_ce 4.7.0 (4.13.2 available)
+  cached_network_image_web_ce 2.1.1 (2.1.2 available)
+  clock 1.1.2 (1.1.3 available)
+  code_assets 1.2.1 (2.1.0 available)
+  connectivity_plus 6.1.5 (7.3.2 available)
+  cross_file 0.3.5+2 (0.4.0 available)
+  crypto 3.0.7 (3.0.8 available)
+  dbus 0.7.14 (0.8.0 available)
+  dio 5.9.2 (5.11.1 available)
+  dio_web_adapter 2.1.2 (2.2.2 available)
+  dlna_dart 0.1.0 (0.1.2 available)
+  file_selector_linux 0.9.4 (0.9.4+1 available)
+  file_selector_macos 0.9.5 (0.9.5+2 available)
+  file_selector_windows 0.9.3+5 (0.9.3+6 available)
+  flutter_smart_dialog 4.9.8+10 (5.3.1 available)
+  hive_ce 2.19.3 (2.22.0 available)
+  hooks 2.0.2 (2.2.0 available)
+  image 4.3.0 (4.12.0 available)
+  image_picker 1.2.2 (1.2.4 available)
+  image_picker_android 0.8.13+19 (0.8.13+25 available)
+  image_picker_ios 0.8.13+6 (0.8.13+15 available)
+  image_picker_platform_interface 2.11.1 (2.11.2 available)
+  jni 1.0.0 (1.1.2 available)
+  jni_flutter 1.0.1 (1.0.4+1 available)
+  matcher 0.12.19 (0.12.20 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+! media_kit_libs_windows_video 1.0.11 from path .local_plugins\media_kit_libs_windows_video (overridden)
+  media_kit_video 1.3.1 (2.0.1 available)
+  meta 1.18.0 (1.19.0 available)
+  mime 2.0.0 (2.1.0 available)
+  nm 0.5.0 (0.6.0 available)
+  objective_c 9.4.1 (9.6.3 available)
+  octo_image 2.1.0 (2.1.3 available)
+  package_config 2.2.0 (3.0.0 available)
+  package_info_plus 10.1.0 (10.2.2 available)
+  path_provider 2.1.5 (2.1.6 available)
+  path_provider_linux 2.2.1 (2.2.2 available)
+  path_provider_platform_interface 2.1.2 (2.1.3 available)
+  petitparser 7.0.2 (7.1.0 available)
+  platform 3.1.6 (3.2.0 available)
+  pub_semver 2.2.0 (2.2.1 available)
+  record_use 0.6.0 (1.1.1 available)
+  safe_local_storage 2.0.3 (2.0.7 available)
+  screen_brightness_android 2.1.5 (2.1.6 available)
+  screen_brightness_platform_interface 2.1.1 (2.1.2 available)
+  screen_retriever 0.2.1 (0.3.1 available)
+  screen_retriever_linux 0.2.1 (0.2.2 available)
+  screen_retriever_macos 0.2.1 (0.2.2 available)
+  screen_retriever_platform_interface 0.2.1 (0.2.2 available)
+  screen_retriever_windows 0.2.1 (0.2.2 available)
+  shared_preferences 2.5.5 (2.5.6 available)
+  shared_preferences_android 2.4.26 (2.5.4 available)
+  shared_preferences_foundation 2.5.6 (2.6.1 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  synchronized 3.4.1 (3.6.1 available)
+  test_api 0.7.11 (0.7.15 available)
+  uuid 4.5.3 (4.6.0 available)
+  vector_math 2.2.0 (2.4.4 available)
+  vm_service 15.2.0 (15.4.0 available)
+  volume_controller 3.6.0 (3.7.1 available)
+  wakelock_plus 1.6.1 (1.8.2 available)
+  wakelock_plus_platform_interface 1.5.1 (1.7.0 available)
+  web 1.1.1 (1.1.2 available)
+  webview_flutter 4.14.0 (4.14.1 available)
+  webview_flutter_android 4.13.0 (4.14.1 available)
+  webview_flutter_wkwebview 3.26.0 (3.27.2 available)
+  win32 6.3.0 (6.4.0 available)
+  window_manager 0.4.3 (0.6.0 available)
+  xml 6.6.1 (7.1.0 available)
+  yaml 3.1.3 (3.1.4 available)
+Got dependencies!
+71 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing newtv...                                              
+
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:10:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:11:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:12:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:13:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:14:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:15:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:16:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:17:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:18:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:19:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:20:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:21:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:22:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:23:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\app.dart:24:8 - always_use_package_imports
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\app.dart:149:9 - use_null_aware_elements
+   info - Use 'DecoratedBox' rather than a 'Container' with only a 'Decoration'. Try replacing the 'Container' with a 'DecoratedBox' - lib\app.dart:277:12 - use_decorated_box
+   info - Use 'DecoratedBox' rather than a 'Container' with only a 'Decoration'. Try replacing the 'Container' with a 'DecoratedBox' - lib\app.dart:405:14 - use_decorated_box
+   info - Use 'DecoratedBox' rather than a 'Container' with only a 'Decoration'. Try replacing the 'Container' with a 'DecoratedBox' - lib\app.dart:484:17 - use_decorated_box
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:507:33 - prefer_const_constructors
+   info - Use 'DecoratedBox' rather than a 'Container' with only a 'Decoration'. Try replacing the 'Container' with a 'DecoratedBox' - lib\app.dart:525:17 - use_decorated_box
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:548:33 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:919:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:921:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:947:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:948:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:955:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:962:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:969:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:976:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:982:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:989:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:995:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:1002:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:1008:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:1014:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:1020:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:1026:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\app.dart:1032:21 - prefer_const_constructors
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\main.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\main.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\main.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\main.dart:10:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\main.dart:11:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\main.dart:12:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\main.dart:13:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\main.dart:14:8 - always_use_package_imports
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\main.dart:34:3 - cascade_invocations
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\main.dart:37:3 - cascade_invocations
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\main.dart:43:5 - cascade_invocations
+   info - Use an initializing formal to assign a parameter to a field. Try using an initialing formal ('this._type') to initialize the field - lib\models\app_config.dart:86:9 - prefer_initializing_formals
+   info - Use an initializing formal to assign a parameter to a field. Try using an initialing formal ('this._stringValue') to initialize the field - lib\models\app_config.dart:87:9 - prefer_initializing_formals
+   info - Use an initializing formal to assign a parameter to a field. Try using an initialing formal ('this._intValue') to initialize the field - lib\models\app_config.dart:88:9 - prefer_initializing_formals
+   info - Use an initializing formal to assign a parameter to a field. Try using an initialing formal ('this._doubleValue') to initialize the field - lib\models\app_config.dart:89:9 - prefer_initializing_formals
+   info - Use an initializing formal to assign a parameter to a field. Try using an initialing formal ('this._boolValue') to initialize the field - lib\models\app_config.dart:90:9 - prefer_initializing_formals
+   info - Use an initializing formal to assign a parameter to a field. Try using an initialing formal ('this._dictValue') to initialize the field - lib\models\app_config.dart:91:9 - prefer_initializing_formals
+   info - Use an initializing formal to assign a parameter to a field. Try using an initialing formal ('this._arrayValue') to initialize the field - lib\models\app_config.dart:92:9 - prefer_initializing_formals
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\models\app_config.dart:121:18 - unnecessary_lambdas
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\models\cache_store.dart:4:8 - always_use_package_imports
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\models\cache_store.dart:378:5 - cascade_invocations
+   info - Dangling library doc comment. Add a 'library' directive after the library comment - lib\models\live_models.dart:1:1 - dangling_library_doc_comments
+   info - Dangling library doc comment. Add a 'library' directive after the library comment - lib\models\player_engine.dart:2:1 - dangling_library_doc_comments
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\models\vod_info.dart:1:8 - always_use_package_imports
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\models\vod_info.dart:95:5 - cascade_invocations
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\controller.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\controller.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\controller.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\controller.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\controller.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\controller.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\controller.dart:10:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\episode_list.dart:2:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:10:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:11:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:12:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:13:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:14:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:15:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:16:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:17:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\detail\view.dart:18:8 - always_use_package_imports
+   info - Constructors in '@immutable' classes should be declared as 'const'. Try adding 'const' to the constructor declaration - lib\pages\detail\view.dart:22:3 - prefer_const_constructors_in_immutables
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\detail\view.dart:163:30 - unnecessary_lambdas
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\pages\detail\view.dart:171:15 - use_colored_box
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\pages\detail\view.dart:282:18 - use_colored_box
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\detail\view.dart:327:19 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\detail\view.dart:328:23 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\detail\view.dart:335:16 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\detail\view.dart:346:23 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\detail\view.dart:347:23 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\dlna\view.dart:57:16 - unnecessary_lambdas
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\pages\dlna\view.dart:159:29 - unnecessary_underscores
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\favorites\controller.dart:2:8 - always_use_package_imports
+warning - Unused import: '../../models/movie.dart'. Try removing the import directive - lib\pages\favorites\controller.dart:2:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\favorites\controller.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\favorites\view.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\favorites\view.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\favorites\view.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\favorites\view.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\favorites\view.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\favorites\view.dart:8:8 - always_use_package_imports
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\pages\favorites\view.dart:21:13 - use_colored_box
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\history\controller.dart:2:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\history\controller.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\history\controller.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\history\view.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\history\view.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\history\view.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\history\view.dart:7:8 - always_use_package_imports
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\pages\history\view.dart:29:13 - use_colored_box
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\pages\history\view.dart:90:31 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\pages\history\view.dart:232:44 - unnecessary_underscores
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\pages\history\view.dart:239:12 - use_colored_box
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\controller.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\controller.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\controller.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\controller.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\controller.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\controller.dart:8:8 - always_use_package_imports
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\pages\home\controller.dart:103:9 - use_null_aware_elements
+   info - The member 'refresh' overrides an inherited member but isn't annotated with '@override'. Try adding the '@override' annotation - lib\pages\home\controller.dart:245:16 - annotate_overrides
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:10:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:11:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:12:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:13:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\home\view.dart:14:8 - always_use_package_imports
+warning - The member 'value' can only be used within instance members of subclasses of 'RxList' - lib\pages\home\view.dart:130:56 - invalid_use_of_protected_member
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\home\view.dart:196:15 - prefer_const_constructors
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\home\view.dart:350:28 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\home\view.dart:375:20 - unnecessary_lambdas
+   info - Use 'const' for final variables initialized to a constant value. Try replacing 'final' with 'const' - lib\pages\home\view.dart:379:13 - prefer_const_declarations
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\live\controller.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\live\controller.dart:5:8 - always_use_package_imports
+warning - The '!' will have no effect because the receiver can't be null. Try removing the '!' operator - lib\pages\live\controller.dart:86:30 - unnecessary_non_null_assertion
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\live\controller.dart:144:56 - unnecessary_lambdas
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\live\view.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\live\view.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\live\view.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\live\view.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\live\view.dart:9:8 - always_use_package_imports
+warning - Unused import: '../../widgets/common_widgets.dart'. Try removing the import directive - lib\pages\live\view.dart:9:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\live\view.dart:10:8 - always_use_package_imports
+warning - The value of the field '_channelInfoAutoHideDelay' isn't used. Try removing the field, or using it - lib\pages\live\view.dart:34:23 - unused_field
+warning - The declaration '_reportUserActivity' isn't referenced. Try removing the declaration of '_reportUserActivity' - lib\pages\live\view.dart:582:8 - unused_element
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\controller.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\controller.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\controller.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\controller.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\controller.dart:7:8 - always_use_package_imports
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\pages\search\controller.dart:72:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\pages\search\controller.dart:74:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\pages\search\controller.dart:91:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\pages\search\controller.dart:93:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\pages\search\controller.dart:98:7 - avoid_print
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\pages\search\controller.dart:143:5 - cascade_invocations
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\view.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\view.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\view.dart:5:8 - always_use_package_imports
+warning - Unused import: '../../models/movie.dart'. Try removing the import directive - lib\pages\search\view.dart:5:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\view.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\view.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\search\view.dart:8:8 - always_use_package_imports
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\pages\search\view.dart:59:13 - use_colored_box
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\pages\search\view.dart:230:12 - use_colored_box
+   info - Use 'const' for final variables initialized to a constant value. Try replacing 'final' with 'const' - lib\pages\search\view.dart:347:11 - prefer_const_declarations
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\search\view.dart:405:26 - unnecessary_lambdas
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\controller.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\controller.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\controller.dart:10:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\controller.dart:11:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\controller.dart:12:8 - always_use_package_imports
+   info - The private field _nodeJSStarted could be 'final'. Try making the field 'final' - lib\pages\settings\controller.dart:45:8 - prefer_final_fields
+warning - The value of the field '_nodeJSStarted' isn't used. Try removing the field, or using it - lib\pages\settings\controller.dart:45:8 - unused_field
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\pages\settings\controller.dart:240:5 - cascade_invocations
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\pages\settings\controller.dart:269:7 - cascade_invocations
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\pages\settings\controller.dart:270:7 - cascade_invocations
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\pages\settings\controller.dart:405:18 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\pages\settings\controller.dart:423:18 - avoid_slow_async_io
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\view.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\view.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\view.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\view.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\view.dart:7:8 - always_use_package_imports
+warning - Unused import: '../../models/source_bean.dart'. Try removing the import directive - lib\pages\settings\view.dart:7:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\view.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\view.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\settings\view.dart:10:8 - always_use_package_imports
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\pages\settings\view.dart:28:13 - use_colored_box
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\settings\view.dart:145:25 - prefer_const_constructors
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\settings\view.dart:331:24 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\settings\view.dart:366:29 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\settings\view.dart:380:29 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\settings\view.dart:394:29 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\settings\view.dart:408:29 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\settings\view.dart:417:24 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\settings\view.dart:434:20 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\pages\settings\view.dart:475:20 - unnecessary_lambdas
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\settings\view.dart:564:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\settings\view.dart:567:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\settings\view.dart:595:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\settings\view.dart:814:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\settings\view.dart:815:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\settings\view.dart:857:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\settings\view.dart:859:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\settings\view.dart:868:23 - prefer_const_constructors
+   info - Use 'DecoratedBox' rather than a 'Container' with only a 'Decoration'. Try replacing the 'Container' with a 'DecoratedBox' - lib\pages\settings\view.dart:987:20 - use_decorated_box
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\setup\view.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\pages\setup\view.dart:6:8 - always_use_package_imports
+   info - Use 'DecoratedBox' rather than a 'Container' with only a 'Decoration'. Try replacing the 'Container' with a 'DecoratedBox' - lib\pages\setup\view.dart:124:13 - use_decorated_box
+   info - Use 'DecoratedBox' rather than a 'Container' with only a 'Decoration'. Try replacing the 'Container' with a 'DecoratedBox' - lib\pages\setup\view.dart:206:19 - use_decorated_box
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\pages\setup\view.dart:230:35 - prefer_const_constructors
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\router\app_pages.dart:2:8 - always_use_package_imports
+warning - Unused import: '../pages/home/view.dart'. Try removing the import directive - lib\router\app_pages.dart:2:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\router\app_pages.dart:3:8 - always_use_package_imports
+warning - Unused import: '../pages/live/view.dart'. Try removing the import directive - lib\router\app_pages.dart:3:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\router\app_pages.dart:4:8 - always_use_package_imports
+warning - Unused import: '../pages/history/view.dart'. Try removing the import directive - lib\router\app_pages.dart:4:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\router\app_pages.dart:5:8 - always_use_package_imports
+warning - Unused import: '../pages/favorites/view.dart'. Try removing the import directive - lib\router\app_pages.dart:5:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\router\app_pages.dart:6:8 - always_use_package_imports
+warning - Unused import: '../pages/settings/view.dart'. Try removing the import directive - lib\router\app_pages.dart:6:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\router\app_pages.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\router\app_pages.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\router\app_pages.dart:9:8 - always_use_package_imports
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\router\app_pages.dart:19:13 - unnecessary_lambdas
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\api_config.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\api_config.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\api_config.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\api_config.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\api_config.dart:8:8 - always_use_package_imports
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\services\api_config.dart:177:21 - unnecessary_lambdas
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\services\api_config.dart:177:27 - prefer_const_constructors
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\api_config.dart:205:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\api_config.dart:224:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\api_config.dart:259:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\api_config.dart:291:5 - avoid_print
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\services\api_config.dart:325:5 - cascade_invocations
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\api_config.dart:479:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\api_config.dart:580:13 - avoid_print
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\services\api_config.dart:1027:5 - cascade_invocations
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\services\api_config.dart:1032:5 - cascade_invocations
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\services\app_log.dart:78:5 - cascade_invocations
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\services\app_log.dart:79:5 - cascade_invocations
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\services\app_log.dart:80:5 - cascade_invocations
+   info - Angle brackets will be interpreted as HTML. Try using backticks around the content with angle brackets, or try replacing `<` with `&lt;` and `>` with `&gt;` - lib\services\app_log.dart:126:22 - unintended_html_in_doc_comment
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\app_log.dart:159:18 - avoid_slow_async_io
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:225:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:310:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:311:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:312:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:313:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:337:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:338:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:339:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:340:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:367:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:368:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:369:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:370:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:371:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:372:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:373:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:374:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:400:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:401:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:402:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:403:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:404:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:425:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:426:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\app_log.dart:427:7 - use_null_aware_elements
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\app_log.dart:516:18 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\app_log.dart:520:17 - avoid_slow_async_io
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\app_state.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\app_state.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\app_state.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\app_state.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\app_state.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\app_state.dart:10:8 - always_use_package_imports
+warning - Unused import: '../models/source_bean.dart'. Try removing the import directive - lib\services\app_state.dart:10:8 - unused_import
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\app_state.dart:197:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\app_state.dart:207:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\app_state.dart:229:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\app_state.dart:236:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\app_state.dart:256:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\app_state.dart:259:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\app_state.dart:266:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\app_state.dart:279:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\app_state.dart:321:7 - avoid_print
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\background_service.dart:7:8 - always_use_package_imports
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\background_service.dart:57:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\background_service.dart:66:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\background_service.dart:96:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\background_service.dart:99:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\background_service.dart:129:7 - avoid_print
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\background_service.dart:207:11 - use_null_aware_elements
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\services\background_service.dart:224:35 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores. Try using '_' - lib\services\background_service.dart:224:39 - unnecessary_underscores
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\background_service.dart:229:15 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' - lib\services\background_service.dart:290:9 - use_null_aware_elements
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\network_manager.dart:2:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\nodejs_manager.dart:30:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\nodejs_manager.dart:31:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\nodejs_manager.dart:32:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\nodejs_manager.dart:33:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\nodejs_manager.dart:34:8 - always_use_package_imports
+   info - Unnecessary duplication of receiver. Try using a cascade to avoid the duplication - lib\services\nodejs_manager.dart:73:7 - cascade_invocations
+   info - Unnecessary 'await'. Try removing the 'await' - lib\services\nodejs_manager.dart:109:12 - unnecessary_await_in_return
+warning - Unnecessary cast. Try removing the cast - lib\services\nodejs_manager.dart:163:15 - unnecessary_cast
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_manager.dart:423:7 - avoid_print
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\services\nodejs_manager.dart:425:27 - unnecessary_lambdas
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_manager.dart:433:7 - avoid_print
+warning - The ability to import 'BytesBuilder' indirectly is deprecated. Try importing 'BytesBuilder' directly - lib\services\nodejs_manager.dart:498:25 - deprecated_export_use
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\services\nodejs_manager.dart:500:11 - unnecessary_lambdas
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_manager.dart:516:15 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_manager.dart:525:13 - avoid_print
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\nodejs_platform_android.dart:30:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\nodejs_platform_ios.dart:29:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\nodejs_platform_ios.dart:30:8 - always_use_package_imports
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:82:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:96:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:105:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:108:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:112:9 - avoid_print
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_ios.dart:130:16 - avoid_slow_async_io
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:157:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:175:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:181:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:185:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:189:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:208:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:211:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:224:5 - avoid_print
+   info - The member 'onPortReceived' overrides an inherited member but isn't annotated with '@override'. Try adding the '@override' annotation - lib\services\nodejs_platform_ios.dart:232:8 - annotate_overrides
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:233:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:241:9 - avoid_print
+   info - The member 'onMessage' overrides an inherited member but isn't annotated with '@override'. Try adding the '@override' annotation - lib\services\nodejs_platform_ios.dart:251:8 - annotate_overrides
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:252:5 - avoid_print
+   info - The member 'setNativeServerPort' overrides an inherited member but isn't annotated with '@override'. Try adding the '@override' annotation - lib\services\nodejs_platform_ios.dart:260:8 - annotate_overrides
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:272:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:284:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:300:7 - avoid_print
+warning - The value of the local variable 'configMd5Path' isn't used. Try removing the variable or using it - lib\services\nodejs_platform_ios.dart:310:11 - unused_local_variable
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_ios.dart:312:33 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_ios.dart:313:34 - avoid_slow_async_io
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:314:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:330:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:338:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:343:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_ios.dart:354:9 - avoid_print
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_ios.dart:387:20 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_ios.dart:411:15 - avoid_slow_async_io
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\nodejs_platform_windows.dart:23:8 - always_use_package_imports
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:79:16 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:91:16 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:106:16 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:127:16 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:137:15 - avoid_slow_async_io
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:138:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:142:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:166:5 - avoid_print
+warning - The operand can't be 'null', so the condition is always 'true'. Remove the condition - lib\services\nodejs_platform_windows.dart:178:25 - unnecessary_null_comparison
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:201:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:206:5 - avoid_print
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:221:16 - avoid_slow_async_io
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:224:5 - avoid_print
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:244:15 - avoid_slow_async_io
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:248:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:252:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:255:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:279:7 - avoid_print
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:283:16 - avoid_slow_async_io
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:284:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:290:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:294:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:319:32 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:323:32 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:326:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:334:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:353:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:368:5 - avoid_print
+   info - The member 'onPortReceived' overrides an inherited member but isn't annotated with '@override'. Try adding the '@override' annotation - lib\services\nodejs_platform_windows.dart:376:8 - annotate_overrides
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:377:5 - avoid_print
+   info - The member 'onMessage' overrides an inherited member but isn't annotated with '@override'. Try adding the '@override' annotation - lib\services\nodejs_platform_windows.dart:388:8 - annotate_overrides
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:389:5 - avoid_print
+   info - The member 'setNativeServerPort' overrides an inherited member but isn't annotated with '@override'. Try adding the '@override' annotation - lib\services\nodejs_platform_windows.dart:397:8 - annotate_overrides
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:410:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:422:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:438:7 - avoid_print
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:454:33 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:455:34 - avoid_slow_async_io
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:456:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:462:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:473:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:480:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:483:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:488:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:504:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:525:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:540:7 - avoid_print
+warning - The '!' will have no effect because the receiver can't be null. Try removing the '!' operator - lib\services\nodejs_platform_windows.dart:559:43 - unnecessary_non_null_assertion
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\nodejs_platform_windows.dart:563:7 - avoid_print
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:567:16 - avoid_slow_async_io
+warning - The '!' will have no effect because the receiver can't be null. Try removing the '!' operator - lib\services\nodejs_platform_windows.dart:568:48 - unnecessary_non_null_assertion
+   info - Unnecessary 'await'. Try removing the 'await' - lib\services\nodejs_platform_windows.dart:582:12 - unnecessary_await_in_return
+   info - Use of an async 'dart:io' method. Try using the synchronous version of the method - lib\services\nodejs_platform_windows.dart:589:15 - avoid_slow_async_io
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\source_service.dart:2:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\source_service.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\source_service.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\source_service.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\source_service.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\source_service.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\source_service.dart:8:8 - always_use_package_imports
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\services\source_service.dart:524:14 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\services\source_service.dart:541:27 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\services\source_service.dart:762:29 - unnecessary_lambdas
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\source_service.dart:833:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\source_service.dart:844:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\source_service.dart:849:5 - avoid_print
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\spider_service.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\spider_service.dart:4:8 - always_use_package_imports
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:96:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:99:13 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:103:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:115:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:126:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:129:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:146:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:163:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:166:11 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:170:9 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:174:7 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:184:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:194:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:209:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:226:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:237:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:248:5 - avoid_print
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\spider_service.dart:293:5 - avoid_print
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\services\theme_service.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\widgets\common_widgets.dart:2:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\widgets\glass.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\widgets\hero_carousel.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\widgets\hero_carousel.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\widgets\video_player.dart:10:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\widgets\video_player.dart:11:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\widgets\video_player.dart:12:8 - always_use_package_imports
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\widgets\video_player.dart:263:7 - unnecessary_lambdas
+   info - Closure should be a tearoff. Try using a tearoff rather than a closure - lib\widgets\video_player.dart:677:18 - unnecessary_lambdas
+   info - Unnecessary comparison to a boolean literal. Remove the comparison and use the negate `!` operator if necessary - lib\widgets\video_player.dart:709:36 - no_literal_bool_comparisons
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\widgets\video_player.dart:1035:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\widgets\video_player.dart:1037:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\widgets\video_player.dart:1039:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\widgets\video_player.dart:1041:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\widgets\video_player.dart:1044:9 - prefer_const_constructors
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\widgets\video_player.dart:1771:22 - use_colored_box
+   info - Use a 'ColoredBox' rather than a 'Container' with only a 'Color'. Try replacing the 'Container' with a 'ColoredBox' - lib\widgets\video_player.dart:1797:22 - use_colored_box
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\widgets\video_player.dart:1803:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\widgets\video_player.dart:2496:7 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\widgets\video_player.dart:2511:9 - prefer_const_constructors
+   info - Use 'DecoratedBox' rather than a 'Container' with only a 'Decoration'. Try replacing the 'Container' with a 'DecoratedBox' - lib\widgets\video_player.dart:2725:22 - use_decorated_box
+   info - Unnecessary braces in a string interpolation. Try removing the braces - lib\widgets\video_player.dart:2844:36 - unnecessary_brace_in_string_interps
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\widgets\vod_card.dart:3:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory. Try converting the URI to a 'package:' URI - lib\widgets\vod_card.dart:4:8 - always_use_package_imports
+
