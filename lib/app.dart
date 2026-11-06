@@ -7,6 +7,7 @@ import 'common/constants.dart';
 import 'services/app_state.dart';
 import 'services/app_log.dart';
 import 'services/background_service.dart';
+import 'services/theme_service.dart';
 import 'services/nodejs_manager.dart';
 import 'pages/home/view.dart';
 import 'pages/live/view.dart';
@@ -14,12 +15,15 @@ import 'pages/live/controller.dart';
 import 'pages/history/view.dart';
 import 'pages/favorites/view.dart';
 import 'pages/settings/view.dart';
+import 'pages/mine/view.dart';
+import 'pages/shortplay/view.dart';
 import 'pages/search/view.dart';
 import 'pages/search/controller.dart';
 import 'pages/settings/controller.dart';
 import 'router/app_pages.dart';
 import 'services/player_fullscreen_controller.dart';
 import 'widgets/video_player_pip.dart';
+import 'widgets/glass.dart';
 
 class TVBoxApp extends StatelessWidget {
   const TVBoxApp({super.key});
@@ -31,9 +35,11 @@ class TVBoxApp extends StatelessWidget {
     Get.put(PlayerFullscreenController(), permanent: true);
     return GetMaterialApp(
       title: 'TVBox',
-      theme: AppTheme.darkTheme,
+      // 浅色/深色两套 ThemeData 都给上，实际用哪套由 ThemeService 通过
+      // Get.changeThemeMode 切换；MaterialApp 重建时会重新读 AppTheme 的静态色
+      theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.system,
       // 把 NavigatorState 暴露给 VideoPlayerPip，让画中画能插入到顶层 Overlay
       navigatorKey: VideoPlayerPip.navigatorKey,
       home: const ContentView(),
@@ -106,6 +112,16 @@ class _ContentViewState extends State<ContentView>
       }
     });
     _loadSavedConfig();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    // 只有「跟随系统」时才需要跟着变；浅色/深色是用户明确指定的
+    final b = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    if (Get.isRegistered<ThemeService>()) {
+      ThemeService.instance.onSystemBrightnessChanged(b);
+    }
   }
 
   @override
@@ -243,7 +259,7 @@ class _ContentViewState extends State<ContentView>
                   }
                   return Text(
                     text,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textTertiary,
                       fontSize: AppTheme.fontCaption,
                     ),
@@ -305,7 +321,7 @@ class _ContentViewState extends State<ContentView>
                   ),
                 ),
                 const SizedBox(height: AppTheme.spacingXL),
-                const Text(
+                Text(
                   'TVBox',
                   style: TextStyle(
                     fontSize: 48,
@@ -328,7 +344,7 @@ class _ContentViewState extends State<ContentView>
                       const SizedBox(height: AppTheme.spacingLG),
                       Text(
                         phase.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: AppTheme.fontSubhead,
                         ),
@@ -348,7 +364,7 @@ class _ContentViewState extends State<ContentView>
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
                           appState.phaseDisplayText,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppTheme.textPrimary,
                             fontSize: AppTheme.fontSubhead,
                           ),
@@ -433,7 +449,7 @@ class _ContentViewState extends State<ContentView>
                   ),
                 ),
                 const SizedBox(height: AppTheme.spacingXL),
-                const Text(
+                Text(
                   'TVBox',
                   style: TextStyle(
                     fontSize: 48,
@@ -443,7 +459,7 @@ class _ContentViewState extends State<ContentView>
                   ),
                 ),
                 const SizedBox(height: AppTheme.spacingSM),
-                const Text(
+                Text(
                   '极致视听 · 简洁至上',
                   style: TextStyle(
                     fontSize: AppTheme.fontSubhead,
@@ -457,7 +473,7 @@ class _ContentViewState extends State<ContentView>
                 Container(
                   alignment: Alignment.centerLeft,
                   padding: const EdgeInsets.only(left: AppTheme.spacingXS),
-                  child: const Text(
+                  child: Text(
                     '接口配置',
                     style: TextStyle(
                       fontSize: AppTheme.fontHeadline,
@@ -482,9 +498,9 @@ class _ContentViewState extends State<ContentView>
                       Expanded(
                         child: TextField(
                           controller: _vodUrlController,
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: AppTheme.textPrimary),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: '请输入点播接口地址 (URL)',
                             hintStyle: TextStyle(
                                 color: AppTheme.textTertiary),
@@ -523,9 +539,9 @@ class _ContentViewState extends State<ContentView>
                       Expanded(
                         child: TextField(
                           controller: _liveUrlController,
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: AppTheme.textPrimary),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: '请输入直播接口地址 (URL，可留空跟随点播)',
                             hintStyle: TextStyle(
                                 color: AppTheme.textTertiary),
@@ -611,7 +627,7 @@ class _ContentViewState extends State<ContentView>
                         Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: AppTheme.spacingXS),
-                          child: const Text(
+                          child: Text(
                             '最近使用',
                             style: TextStyle(
                               fontSize: AppTheme.fontCaption,
@@ -645,7 +661,7 @@ class _ContentViewState extends State<ContentView>
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                           Icons
                                               .history_rounded,
                                           size: AppTheme.fontCaption,
@@ -656,7 +672,7 @@ class _ContentViewState extends State<ContentView>
                                       Expanded(
                                         child: Text(
                                           url,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize:
                                                 AppTheme.fontCaption,
                                             color:
@@ -667,7 +683,7 @@ class _ContentViewState extends State<ContentView>
                                               TextOverflow.ellipsis,
                                         ),
                                       ),
-                                      const Icon(Icons.chevron_right,
+                                      Icon(Icons.chevron_right,
                                           size: 8,
                                           color: AppTheme.textTertiary),
                                     ],
@@ -782,12 +798,13 @@ class _ContentViewState extends State<ContentView>
   // 主标签视图 - 对应 Swift mainTabView
   // ============================================================
 
+  // 参考稿：底部只留 4 个 —— 首页 / 短剧 / 直播 / 我的。
+  // 历史、收藏、设置全部收进「我的」，作为二级页面 push。
   final List<Widget> _tabPages = [
     const HomePage(),
+    const ShortPlayPage(),
     const LivePage(),
-    const HistoryPage(),
-    const FavoritesPage(),
-    const SettingsPage(),
+    const MinePage(),
   ];
 
   Widget _buildMainTabView() {
@@ -833,25 +850,11 @@ class _ContentViewState extends State<ContentView>
         if (PlayerFullscreenController.instance.isFullscreen.value) {
           return const SizedBox.shrink();
         }
-        return Container(
+        // 毛玻璃胶囊导航：BackdropFilter 要 ClipRRect 兜住，Glass 内部已经处理
+        return Glass(
         margin: const EdgeInsets.fromLTRB(32, 0, 32, 4),
-        decoration: BoxDecoration(
-          // 半透明色, 让 BackgroundService 全局背景层透出
-          // 替换原 Color(0xFF1C1C1E) (完全不透明) 造成的"黑色板块"问题
-          color: AppTheme.backgroundNavBar,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
-            width: 0.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
+        radius: 30,
+        blur: 26,
         child: SafeArea(
           top: false,
           child: Padding(
@@ -861,13 +864,9 @@ class _ContentViewState extends State<ContentView>
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _navItem(Icons.home_outlined, Icons.home, '首页', 0),
-                _navItem(Icons.tv_outlined, Icons.tv, '直播', 1),
-                _navItem(
-                    Icons.schedule_outlined, Icons.schedule, '历史', 2),
-                _navItem(
-                    Icons.favorite_border, Icons.favorite, '收藏', 3),
-                _navItem(
-                    Icons.settings_outlined, Icons.settings, '设置', 4),
+                _navItem(Icons.movie_outlined, Icons.movie, '短剧', 1),
+                _navItem(Icons.live_tv_outlined, Icons.live_tv, '直播', 2),
+                _navItem(Icons.person_outline, Icons.person, '我的', 3),
               ],
             ),
           ),
@@ -914,7 +913,7 @@ class _ContentViewState extends State<ContentView>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusLG),
             ),
-            title: const Row(
+            title: Row(
               children: [
                 Icon(Icons.gavel,
                     color: AppTheme.accentColor, size: 22),
@@ -935,7 +934,7 @@ class _ContentViewState extends State<ContentView>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       '使用本软件前，请仔细阅读以下免责声明。点击"同意"即表示您已阅读、理解并同意接受全部条款约束。',
                       style: TextStyle(
@@ -1061,7 +1060,7 @@ class _ContentViewState extends State<ContentView>
                         materialTapTargetSize:
                             MaterialTapTargetSize.shrinkWrap,
                       ),
-                      const Text(
+                      Text(
                         '不再提示',
                         style: TextStyle(
                           color: AppTheme.textSecondary,
@@ -1079,7 +1078,7 @@ class _ContentViewState extends State<ContentView>
                           Navigator.pop(ctx);
                           SystemNavigator.pop();
                         },
-                        child: const Text('不同意',
+                        child: Text('不同意',
                             style:
                                 TextStyle(color: AppTheme.textTertiary)),
                       ),
@@ -1124,10 +1123,10 @@ class _ContentViewState extends State<ContentView>
         // 切回时恢复可见 + 继续播放。
         if (Get.isRegistered<LiveController>()) {
           final live = Get.find<LiveController>();
-          if (index == 1) {
+          if (index == 2) {
             live.isLivePageVisible.value = true;
             live.resumePlayback();
-          } else if (prev == 1) {
+          } else if (prev == 2) {
             live.isLivePageVisible.value = false;
             live.pausePlayback();
           }
@@ -1139,38 +1138,32 @@ class _ContentViewState extends State<ContentView>
         padding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          // 选中态走蓝紫渐变胶囊，图标文字转白，未选中只有 35% 白
-          gradient: isSelected ? AppTheme.accentGradient : null,
+          // 参考稿是「浅蓝底 + 蓝图标蓝字」，不是实心渐变块：
+          // 底部导航常驻，实心块会一直抢注意力。
+          color: isSelected
+              ? AppTheme.accentColor.withValues(alpha: 0.13)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.accentColor.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              size: 18,
+              size: 22,
               color: isSelected
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 0.35),
+                  ? AppTheme.accentColor
+                  : AppTheme.textTertiary,
             ),
             const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 10.5,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.35),
+                    ? AppTheme.accentColor
+                    : AppTheme.textTertiary,
               ),
             ),
           ],
@@ -1266,7 +1259,7 @@ class _DisclaimerText extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: AppTheme.fontFootnote,
               fontWeight: FontWeight.bold,
@@ -1275,7 +1268,7 @@ class _DisclaimerText extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             body,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: AppTheme.fontCaption,
               height: 1.5,
