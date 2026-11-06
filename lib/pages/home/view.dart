@@ -8,6 +8,7 @@ import '../../models/source_bean.dart';
 import '../../models/movie.dart';
 import '../../widgets/vod_card.dart';
 import '../../widgets/hero_carousel.dart';
+import '../../widgets/glass.dart';
 import '../../widgets/common_widgets.dart';
 import '../webview/view.dart';
 import 'controller.dart';
@@ -97,7 +98,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: AppTheme.spacingMD),
-            const Text(
+            Text(
               '正在重连服务...',
               style: TextStyle(
                 color: AppTheme.textSecondary,
@@ -132,7 +133,7 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     children: [
                       Text(source.name,
-                          style: const TextStyle(color: AppTheme.textPrimary)),
+                          style: TextStyle(color: AppTheme.textPrimary)),
                       if (source.key ==
                           ApiConfig.instance.homeSourceBean.value?.key)
                         const SizedBox(width: 8),
@@ -149,7 +150,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Obx(() => Text(
                       ApiConfig.instance.homeSourceBean.value?.name ?? 'TVBox',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: AppTheme.fontHeadline,
                         fontWeight: FontWeight.bold,
@@ -158,7 +159,7 @@ class _HomePageState extends State<HomePage> {
                       overflow: TextOverflow.ellipsis,
                     )),
                 const SizedBox(width: 4),
-                const Icon(Icons.keyboard_arrow_down,
+                Icon(Icons.keyboard_arrow_down,
                     color: AppTheme.textTertiary, size: 16),
               ],
             ),
@@ -183,15 +184,13 @@ class _HomePageState extends State<HomePage> {
             Get.toNamed('/search');
           }
         },
-        child: Container(
-          height: 42,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: AppTheme.backgroundCard,
-            borderRadius: BorderRadius.circular(21),
-            border: Border.all(color: AppTheme.borderLight, width: 0.5),
-          ),
-          child: const Row(
+        child: Glass(
+          radius: 21,
+          blur: 16,
+          child: Container(
+            height: 42,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
             children: [
               Icon(Icons.search, color: AppTheme.textTertiary, size: 17),
               SizedBox(width: 9),
@@ -206,6 +205,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),
@@ -280,7 +280,7 @@ class _HomePageState extends State<HomePage> {
                   width: 36,
                   child: Text(
                     filter.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: AppTheme.fontCaption,
                       fontWeight: FontWeight.w500,
@@ -355,7 +355,7 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.only(top: AppTheme.spacingSM),
                   child: Text(
                     '当前源类型: ${source.typeDescription}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: AppTheme.fontCaption,
                     ),
@@ -560,7 +560,7 @@ class _HomeClockViewState extends State<_HomeClockView> {
           ),
           child: Text(
             _formatDate(date),
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: AppTheme.fontFootnote,
               fontWeight: FontWeight.w500,
