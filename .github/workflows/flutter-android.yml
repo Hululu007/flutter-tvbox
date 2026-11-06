@@ -52,6 +52,15 @@ jobs:
       - name: Pub get
         run: flutter pub get
 
+      # libnode.so 有 60MB，不放仓库，构建前现拉。
+      # 同时铺到 jniLibs（打包进 APK）和 cpp/libnode（CMake 链接与头文件）
+      - name: Fetch libnode (nodejs-mobile)
+        run: |
+          chmod +x tools/fetch_libnode.sh
+          ./tools/fetch_libnode.sh
+          echo "--- jniLibs ---"
+          ls -lh android/app/src/main/jniLibs/arm64-v8a/ 2>/dev/null || { echo "✗ jniLibs 没生成"; exit 1; }
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos || true
 
