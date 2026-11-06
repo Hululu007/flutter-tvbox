@@ -178,14 +178,8 @@ class AppState extends GetxController {
 
   /// 确保 Node.js 已启动并加载 Spider 源 - 对应 Swift ensureNodeJSAndLoadSource
   Future<void> _ensureNodeJSAndLoadSource() async {
-    // Android 端没有内嵌 Node（libnode + JNI 还没补），这里必须直接返回：
-    // 一旦走进下面的 node 启动分支，startNodeJS 返回 false 会把 loadingPhase
-    // 打成 failed，启动页卡死，连带 type=1 的苹果CMS 源也用不了。
-    if (Platform.isAndroid) {
-      AppLog.instance.log('Android: 跳过 Node 初始化（无内嵌运行时）');
-      return;
-    }
-
+    // 注：Android 端已经接入 libnode.so（JNI），跟 iOS 走同一条链路，
+    // 这里不再按平台跳过。只有配置里确实有 spider 源时才会启动 node。
     final hasSpiderSource =
         ApiConfig.instance.sourceBeanList.any((s) => s.isSpiderSource);
     if (!hasSpiderSource) return;
