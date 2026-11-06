@@ -23,6 +23,27 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // libnode 只有 arm64-v8a / armeabi-v7a / x86_64 三个 ABI 的预编译产物，
+        // 这里只打 arm64 —— 真机基本全是它，留两个 ABI 会让 APK 多 25MB
+        ndk {
+            abiFilters.add("arm64-v8a")
+        }
+
+        externalNativeBuild {
+            cmake {
+                // libnode.so 是用 c++_shared 编的，必须同一个 STL
+                arguments.add("-DANDROID_STL=c++_shared")
+                cppFlags.add("-std=c++17")
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     packagingOptions.jniLibs.useLegacyPackaging = true
@@ -89,4 +110,21 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+// ---------------------------------------------------------------------------
+// 把 Flutter 侧的 assets/nodejs-project 复制进 Android assets。
+// node 不能直接读 APK 里的 assets，运行时由 NodeBridge.ensureProject()
+// 再从 assets 解到 filesDir 下。
+// ---------------------------------------------------------------------------
+val copyNodeProject by tasks.registering(Copy::class) {
+    from(rootProject.file("../assets/nodejs-project")) {
+        exclude("node_modules/**")
+        exclude("**/*.map")
+    }
+    into(layout.projectDirectory.dir("src/main/assets/nodejs-project"))
+}
+
+tasks.matching { it.name.startsWith("preBuild") }.configureEach {
+    dependsOn(copyNodeProject)
 }
