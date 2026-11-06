@@ -27,7 +27,9 @@ for a in "$@"; do
     esac
 done
 
-if [ -f "$DEST/bin/arm64-v8a/libnode.so" ] && [ -d "$DEST/include/node" ]; then
+if [ -f "$DEST/bin/arm64-v8a/libnode.so" ] && \
+   [ -f "$DEST/bin/x86_64/libnode.so" ] && \
+   [ -d "$DEST/include/node" ]; then
     echo "✓ libnode 已存在：$DEST"
     du -sh "$DEST"
     exit 0
@@ -73,13 +75,19 @@ if [ "$ALL_ABI" = "true" ]; then
         fi
     done
 else
-    # 默认拉两个真机 ABI。
-    # 为什么不是只留 arm64：AGP 的 externalNativeBuild 会为 flutter 插件
-    # 声明的每个 ABI 都跑一次 configure，即便 build 命令加了
-    # --target-platform android-arm64，armeabi-v7a 那趟也会执行，
-    # 只放 arm64 会在 configure 阶段 FATAL_ERROR。
-    # 打包时 Flutter 仍然只把 arm64 塞进 APK，多出来的只是编译时间。
-    for abi in arm64-v8a armeabi-v7a; do
+    # 默认拉三个 ABI（配合 CI 的 --split-per-abi 按 ABI 拆 APK）：
+    #   arm64-v8a / armeabi-v7a —— 真机
+    #   x86_64                  —— MuMu/雷电等模拟器。它们的 ARM 转译层
+    #     （libhoudini / NdkTranslation）跑不动 libnode 这种带完整 V8 的
+    #     大 so，加载即 SIGSEGV，必须给原生 x86_64 版。
+    # 为什么 arm 的两个都要放：AGP 的 externalNativeBuild 会为
+    # jniLibs/插件声明的每个 ABI 各跑一次 configure，缺哪个就在
+    # configure 阶段报错（CMake 侧已改成 WARNING+return 兜底）。
+    for abi in arm64-v8a armeabi-v7a x86_64; do
+        if [ ! -f "$SRC/bin/$abi/libnode.so" ]; then
+            echo "⚠ 包里没有 $abi 的 libnode.so，跳过"
+            continue
+        fi
         mkdir -p "$DEST/bin/$abi" "$JNI/$abi"
         cp "$SRC/bin/$abi/libnode.so" "$DEST/bin/$abi/"
         cp "$SRC/bin/$abi/libnode.so" "$JNI/$abi/"
