@@ -13,6 +13,7 @@ import '../../widgets/common_widgets.dart';
 import '../../widgets/video_player.dart';
 import '../../widgets/video_player_pip.dart';
 import '../../widgets/window_fullscreen.dart';
+import '../../widgets/glass.dart';
 import 'controller.dart';
 import 'episode_list.dart';
 
@@ -157,7 +158,7 @@ class _DetailPageState extends State<DetailPage> {
             ? null
             : AppBar(
                 leading: IconButton(
-                  icon: const Icon(Icons.chevron_left,
+                  icon: Icon(Icons.chevron_left,
                       color: AppTheme.textPrimary, size: 28),
                   onPressed: () => Get.back(),
                 ),
@@ -374,7 +375,7 @@ class _DetailPageState extends State<DetailPage> {
             // 名称 - 对应 Swift fontTitle2
             Text(
               info.name,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: AppTheme.fontTitle2,
                 fontWeight: FontWeight.bold,
@@ -424,7 +425,7 @@ class _DetailPageState extends State<DetailPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 36,
                 child: Text(
                   '导演',
@@ -437,7 +438,7 @@ class _DetailPageState extends State<DetailPage> {
               Expanded(
                 child: Text(
                   info.director,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: AppTheme.fontCaption,
                   ),
@@ -455,7 +456,7 @@ class _DetailPageState extends State<DetailPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 36,
                 child: Text(
                   '演员',
@@ -468,7 +469,7 @@ class _DetailPageState extends State<DetailPage> {
               Expanded(
                 child: Text(
                   info.actor,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: AppTheme.fontCaption,
                   ),
@@ -489,20 +490,14 @@ class _DetailPageState extends State<DetailPage> {
       if (_controller.isPlaying.value || _controller.vodInfo.value == null) {
         return const SizedBox.shrink();
       }
-      return GestureDetector(
+      return GlassAccentButton(
+        height: 48,
+        radius: AppTheme.radiusLG,
         onTap: () {
           _controller.selectEpisode(0);
           _saveHistoryForCurrentEpisode();
         },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingMD),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppTheme.accentColor, AppTheme.accentLightColor],
-            ),
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          ),
-          child: const Row(
+        child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.play_arrow, color: Colors.white, size: 18),
@@ -516,7 +511,6 @@ class _DetailPageState extends State<DetailPage> {
                 ),
               ),
             ],
-          ),
         ),
       );
     });
@@ -706,7 +700,7 @@ class _DetailPageState extends State<DetailPage> {
             AnimatedCrossFade(
               firstChild: Text(
                 info.des,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: AppTheme.fontBody,
                   height: 1.5,
@@ -716,7 +710,7 @@ class _DetailPageState extends State<DetailPage> {
               ),
               secondChild: Text(
                 info.des,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: AppTheme.fontBody,
                   height: 1.5,
@@ -859,15 +853,16 @@ class _PillChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: Glass(
+        radius: 20,
+        blur: 14,
+        // 选中态给一层半透明品牌色玻璃，未选中是纯白/纯黑玻璃
+        tint: isSelected
+            ? AppTheme.accentColor.withValues(alpha: 0.62)
+            : null,
         padding: const EdgeInsets.symmetric(
           horizontal: AppTheme.spacingLG,
           vertical: AppTheme.spacingSM,
-        ),
-        decoration: BoxDecoration(
-          gradient: isSelected ? AppTheme.accentGradient : null,
-          color: isSelected ? null : AppTheme.backgroundTertiary,
-          borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           title,
