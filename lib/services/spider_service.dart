@@ -40,12 +40,27 @@ class SpiderService {
   // ============================================================
 
   /// 构建 Spider 请求路径
-  /// 当 apiBase 不为空时，路径为 {apiBase}/{action}
-  /// 当 apiBase 为空时，路径为 /{key}/{type}/{action}
+  ///
+  /// 三种形态（实测）：
+  ///   · 猫爪 / website 系 spider —— 路由直接挂在根路径：
+  ///       GET  /config
+  ///       POST /home  /category  /detail  /play  /search
+  ///     这是主流（xbbjhm/catpaw-src 这类 9MB bundle 都是）。
+  ///   · 老的多源 spider —— /{key}/{type}/{action}
+  ///   · 带 apiBase 的 —— {apiBase}/{action}
+  ///
+  /// 之前只实现了后两种，拿猫爪源去请求会被拼成 /xbbjhm/3/home，
+  /// 服务端只认 /home，于是永远 404 —— 这就是"解析不了"的原因。
   String _buildSpiderPath(String key, int type, String apiBase, String action) {
     if (apiBase.isNotEmpty) {
       return '$apiBase/$action';
     }
+    // 根路径优先：猫爪系都按这个来
+    return '/$action';
+  }
+
+  /// 旧格式路径，根路径 404 时用来兜底
+  String _buildLegacySpiderPath(String key, int type, String action) {
     return '/$key/$type/$action';
   }
 
