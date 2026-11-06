@@ -4,11 +4,8 @@ name: Build iOS TrollStore IPA (Flutter + NodeMobile)
 #   - push to main / tag: 自动构建
 #   - workflow_dispatch: 手动触发
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main ]
+  # 只留手动触发：这个工程是用 Contents API 逐文件上传的，每次 PUT 都算一次 push，
+  # 开着 push 自动触发会在批量上传时一次刷出几百个 run，把队列堵死。
   workflow_dispatch:
     inputs:
       tag:
