@@ -1,0 +1,61 @@
+name: tvbox
+description: 跨平台 TVBox 视频播放器（iOS 巨魔 / Android / Windows）。基于 Flutter + Node.js 远程源 + media_kit 视频播放。
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.12.0'
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  get: ^4.6.6
+  dio: ^5.4.0
+  hive_ce: ^2.19.3
+  path_provider: ^2.1.5
+  cached_network_image_ce: ^4.7.0
+  media_kit: ^1.1.11
+  media_kit_video: ^1.2.5
+  media_kit_libs_video: ^1.0.5
+  connectivity_plus: 6.1.5  # 7.x 用了 iOS 26 SDK 的 API（NWPath.isUltraConstrained），macos-14 runner 是 Xcode 15-16 编译不过
+  window_manager: ^0.4.0
+  # url_launcher 已废弃：配置中心改用应用内 webview_flutter 替代
+  flutter_smart_dialog: ^4.9.0
+  uuid: ^4.5.1
+  shared_preferences: ^2.3.4
+  crypto: ^3.0.6
+  archive: ^3.6.1
+  # 全屏状态栏显示电量（battery_plus 跨平台支持 iOS/Android/Windows/macOS/Linux）
+  battery_plus: ^6.2.1
+  # 自定义背景上传 - 从相册选择图片 (image_picker)
+  image_picker: ^1.1.2
+  # 投屏（DLNA/UPnP 设备发现 + 视频推送）
+  # 参考 PiliPlus-main/lib/pages/dlna/view.dart 接入方式
+  # iOS 端需要 NSLocalNetworkUsageDescription + NSBonjourServices = [_ssdp._udp]
+  # 已在 ios/Runner/Info.plist 配置
+  dlna_dart: ^0.1.0
+  # 应用内 WebView（用于配置中心 URL，替代 url_launcher 跳外部浏览器）
+  webview_flutter: ^4.10.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/nodejs-project/dist/
+    - assets/nodejs-project/src/
+    - assets/nodejs-project/src/spider/
+    - assets/nodejs-project/src/spider/video/
+    - assets/nodejs-project/src/spider/book/
+    - assets/nodejs-project/src/spider/pan/
+    - assets/nodejs-project/src/util/
+    # Node.js 运行时的版本元信息（不内嵌 node.exe，启动时按需下载）
+    - assets/nodejs-runtime/version.json
+
+dependency_overrides:
+  media_kit_libs_windows_video:
+    path: .local_plugins/media_kit_libs_windows_video
