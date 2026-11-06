@@ -86,7 +86,7 @@ class VodCard extends StatelessWidget {
           Text(
             video.name,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: AppTheme.fontFootnote,
               height: 1.25,
@@ -100,7 +100,7 @@ class VodCard extends StatelessWidget {
             Text(
               _metaText,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textTertiary,
                 fontSize: AppTheme.fontCaption,
                 height: 1.2,
@@ -157,7 +157,7 @@ class VodCard extends StatelessWidget {
   Widget _placeholder() {
     return ColoredBox(
       color: AppTheme.backgroundTertiary,
-      child: const Center(
+      child: Center(
         child: Icon(Icons.movie_outlined,
             color: AppTheme.textTertiary, size: 22),
       ),
