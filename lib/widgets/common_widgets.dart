@@ -16,7 +16,7 @@ class AppLoading extends StatelessWidget {
           const SizedBox(height: AppTheme.spacingMD),
           Text(
             message,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: AppTheme.fontSubhead,
             ),
@@ -49,7 +49,7 @@ class AppError extends StatelessWidget {
             const SizedBox(height: AppTheme.spacingLG),
             Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: AppTheme.fontSubhead,
               ),
@@ -179,7 +179,7 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: AppTheme.spacingSM),
               Text(
                 message!,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textTertiary,
                   fontSize: AppTheme.fontBody,
                 ),
@@ -214,7 +214,7 @@ class SectionHeader extends StatelessWidget {
         ],
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textPrimary,
             fontSize: AppTheme.fontHeadline,
             fontWeight: FontWeight.w600,
@@ -277,7 +277,7 @@ class MetadataPill extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           color: AppTheme.textSecondary,
           fontSize: AppTheme.fontFootnote,
           fontWeight: FontWeight.w500,
@@ -330,7 +330,7 @@ class SettingsRow extends StatelessWidget {
             Flexible(
               child: Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: AppTheme.fontSubhead,
                 ),
@@ -339,7 +339,7 @@ class SettingsRow extends StatelessWidget {
             ),
           if (onTap != null) ...[
             const SizedBox(width: AppTheme.spacingXS),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               size: AppTheme.fontFootnote,
               color: AppTheme.textTertiary,
@@ -404,7 +404,7 @@ class SelectionModal<T> extends StatelessWidget {
                     const SizedBox(width: AppTheme.spacingSM),
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: AppTheme.fontHeadline,
                         fontWeight: FontWeight.w600,
@@ -412,13 +412,13 @@ class SelectionModal<T> extends StatelessWidget {
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.close, color: AppTheme.textSecondary, size: 18),
+                      icon: Icon(Icons.close, color: AppTheme.textSecondary, size: 18),
                       onPressed: onCancel,
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: AppTheme.borderLight),
+              Divider(height: 1, color: AppTheme.borderLight),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 400),
                 child: ListView.builder(
