@@ -168,7 +168,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
         fit: StackFit.expand,
         children: [
           if (url == null)
-            const ColoredBox(color: AppTheme.backgroundSecondary)
+            ColoredBox(color: AppTheme.backgroundSecondary)
           else
             CachedNetworkImage(
               imageUrl: url,
@@ -181,9 +181,9 @@ class _HeroCarouselState extends State<HeroCarousel> {
               },
               fadeInDuration: const Duration(milliseconds: 220),
               placeholder: (context, u) =>
-                  const ColoredBox(color: AppTheme.backgroundSecondary),
+                  ColoredBox(color: AppTheme.backgroundSecondary),
               errorBuilder: (context, u, e) =>
-                  const ColoredBox(color: AppTheme.backgroundSecondary),
+                  ColoredBox(color: AppTheme.backgroundSecondary),
             ),
           // 图上再盖一层极淡的蓝紫，跟整体色调统一
           DecoratedBox(
