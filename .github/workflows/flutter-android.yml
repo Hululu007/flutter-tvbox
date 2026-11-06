@@ -55,6 +55,13 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos || true
 
+      # screen_brightness_android 2.1.5 的 build.gradle 顶层写了 kotlin{}，
+      # 在 AGP 9.0.1 + Kotlin 2.3.20 下子项目没有这个扩展，直接报
+      # "Could not find method kotlin()"。这个脚本把它删掉（jvmTarget 已由根
+      # build.gradle.kts 的 subprojects 统一设成 17，不会丢配置）。
+      - name: Patch incompatible plugin gradle
+        run: python3 tools/patch_flutter_plugins.py
+
       - name: Build APK
         run: flutter build apk --release --target-platform android-arm64
 
