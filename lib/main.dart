@@ -10,6 +10,7 @@ import 'services/api_config.dart';
 import 'services/app_log.dart';
 import 'services/app_state.dart';
 import 'services/background_service.dart';
+import 'services/theme_service.dart';
 import 'pages/search/controller.dart';
 
 void main() async {
@@ -28,6 +29,9 @@ void main() async {
 
   // 注册 ApiConfig 为 GetxController - 对应 Swift ApiConfig.shared
   Get.put<ApiConfig>(ApiConfig());
+
+  // 主题模式（跟随系统 / 浅色 / 深色）— 早于 runApp 注册，首帧就能读到存档
+  Get.put<ThemeService>(ThemeService(), permanent: true);
 
   // 注册 AppState 为 GetxController - 对应 Swift @StateObject private var appState = AppState()
   Get.put<AppState>(AppState());
