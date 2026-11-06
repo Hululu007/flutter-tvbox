@@ -1,0 +1,2858 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:battery_plus/battery_plus.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
+import 'package:window_manager/window_manager.dart' show DragToMoveArea;
+import '../common/theme.dart';
+import 'video_player_pip.dart';
+import 'window_fullscreen.dart';
+
+/// 视频画面比例 - 对应 Swift VideoFitType
+enum VideoFitType {
+  fill(0, '拉伸', BoxFit.fill),
+  contain(1, '自动', BoxFit.contain),
+  cover(2, '裁剪', BoxFit.cover),
+  fitWidth(3, '等宽', BoxFit.contain),
+  fitHeight(4, '等高', BoxFit.contain),
+  none(5, '原始', BoxFit.none),
+  ratio4x3(6, '4:3', BoxFit.contain),
+  ratio16x9(7, '16:9', BoxFit.contain);
+
+  final int value;
+  final String desc;
+  final BoxFit boxFit;
+  const VideoFitType(this.value, this.desc, this.boxFit);
+
+  double? get aspectRatio {
+    switch (this) {
+      case VideoFitType.ratio4x3:
+        return 4.0 / 3.0;
+      case VideoFitType.ratio16x9:
+        return 16.0 / 9.0;
+      default:
+        return null;
+    }
+  }
+}
+
+/// 视频播放器组件 - 对应 Swift PlayerView + PlayerControlsOverlay
+/// 基于 media_kit + libmpv 实现，自定义控制覆盖层
+///
+/// **全屏策略**：
+/// - 用 `WindowFullScreen` 调 `window_manager.setFullScreen(true)` 实现 OS 全屏。
+/// - `setFullScreen` 内部用 `SetWindowLongPtr` 改 `GWL_STYLE` 加 `WS_POPUP`，
+///   **不受** Windows work area 限制，能直接覆盖 taskbar 区域。
+/// - 改 `GWL_STYLE` 会触发 mpv ANGLE surface 重建，本组件用 `_videoRebuildKey++`
+///   延迟多次重建 Video widget 绕过（详见 `_onWindowFullScreenChanged`）。
+/// - `_isNativeFullscreen` 状态由 `WindowFullScreen.activeNotifier` listener
+///   严格驱动（避免 setState 与 onFullScreenChanged 之间的时序竞态）。
+/// - 同步通知 detail view（通过 [onFullScreenChanged]）切换 immersive 模式
+///   （隐藏 AppBar、让 video 铺满整个屏幕）。
+class VideoPlayerWidget extends StatefulWidget {
+  /// 外部注入的 Player 实例
+  final Player? player;
+
+  /// 外部注入的 VideoController 实例（与 [player] 配套使用）。
+  /// 全屏/普通模式共享同一个 controller 可以避免新 VideoController 在
+  /// OS 全屏切换期间重建 stream 监听造成的画面冻结与点击无反应问题。
+  final VideoController? controller;
+
+  final String url;
+  final Map<String, String>? headers;
+  final double? resumeSeconds;
+  final String? videoTitle;
+  final String? currentEpisodeName;
+  final List<String> episodeNames;
+  final int selectedEpisodeIndex;
+  final bool canPlayNext;
+  final bool canPlayPrevious;
+
+  /// 是否处于画中画模式（窗口无标题栏，需要在视频上叠加 DragToMoveArea）
+  final bool isPipMode;
+
+  /// 跳过片头秒数（0 表示关闭），对应 Swift skipIntroSeconds
+  final int skipIntroSeconds;
+
+  /// 跳过片尾秒数（0 表示关闭），对应 Swift skipOutroSeconds
+  final int skipOutroSeconds;
+
+  final VoidCallback? onPlaying;
+  final ValueChanged<Duration>? onPositionChanged;
+  final VoidCallback? onEnded;
+  final VoidCallback? onError;
+
+  /// 全屏状态变化回调（true=进入全屏，false=退出全屏）
+  /// detail view 收到后切换 immersive 模式（隐藏 AppBar、video 铺满）
+  final ValueChanged<bool>? onFullScreenChanged;
+  final VoidCallback? onPlayNext;
+  final VoidCallback? onPlayPrevious;
+  final ValueChanged<int>? onSelectEpisode;
+  final VoidCallback? onBack;
+  final ValueChanged<int>? onSetSkipIntro;
+  final ValueChanged<int>? onSetSkipOutro;
+
+  const VideoPlayerWidget({
+    super.key,
+    this.player,
+    this.controller,
+    required this.url,
+    this.headers,
+    this.resumeSeconds,
+    this.videoTitle,
+    this.currentEpisodeName,
+    this.episodeNames = const [],
+    this.selectedEpisodeIndex = 0,
+    this.canPlayNext = false,
+    this.canPlayPrevious = false,
+    this.isPipMode = false,
+    this.skipIntroSeconds = 0,
+    this.skipOutroSeconds = 0,
+    this.onPlaying,
+    this.onPositionChanged,
+    this.onEnded,
+    this.onError,
+    this.onFullScreenChanged,
+    this.onPlayNext,
+    this.onPlayPrevious,
+    this.onSelectEpisode,
+    this.onBack,
+    this.onSetSkipIntro,
+    this.onSetSkipOutro,
+  });
+
+  @override
+  State<VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
+  late final Player _player;
+  late final VideoController _controller;
+  bool _ownsPlayer = false; // 是否自己创建并需要释放
+
+  /// 跨 widget rebuild 持久化的状态缓存（按 widget.key 区分）。
+  ///
+  /// **为什么要缓存**：detail view 在 immersive 切换时
+  /// `_buildBody` 返回的 widget tree 结构不同
+  /// （`SingleChildScrollView > Column > [_buildPlayerArea, ...]`
+  ///  vs 顶层直接 `_buildPlayerArea`），导致 VideoPlayerWidget 的
+  /// Element 被销毁 + 重建，state 重置 → `_isNativeFullscreen` 退回
+  /// false → 全屏 icon 卡在"放大"，必须再点一次才能切到"缩小"再触发退出。
+  ///
+  /// 把 `_isNativeFullscreen` / `_isImmersive` 缓存到 static map
+  /// （按 widget key 索引），widget 重建时 initState 从缓存读回原值，
+  /// 状态在 widget Element 生命周期外依然保留。
+  static final Map<String, _PersistedPlayerState> _stateCache =
+      <String, _PersistedPlayerState>{};
+
+  late final _PersistedPlayerState _persisted;
+  late final String _cacheKey;
+
+  bool _isPlaying = false;
+
+  /// 缓冲状态：不再默认 true，而是从 player.state 同步读取，避免全屏/普通模式
+  /// 切换时新实例显示"转圈"假象
+  bool _isBuffering = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  bool _showControls = true;
+  bool _isDragging = false;
+  double _dragValue = 0;
+  double _playbackSpeed = 1.0;
+  bool _isLocked = false;
+  bool _showEpisodeSheet = false;
+  bool _showSettingsSheet = false;
+  VideoFitType _videoFit = VideoFitType.contain;
+  double _volume = 1.0;
+  double _brightness = 0.5;
+
+  /// 内部追踪 native fullscreen 状态（与 mpv / OS 窗口同步）
+  bool _isNativeFullscreen = false;
+
+  /// iOS / 移动端 immersive 状态（WindowFullScreen 在 iOS 是 no-op，
+  /// 所以不能用 `WindowFullScreen.instance.isActive` 同步状态机；
+  /// 改成我们自己维护的标志，作为 icon 切换 / `_onUserToggleFullscreen`
+  /// 分支判断的 source of truth）
+  bool _isImmersive = false;
+
+  /// 长按倍速中：用于在 UI 上显示 "2X" 提示
+  bool _isLongPressingFast = false;
+
+  /// 长按倍速已锁定：上滑超过阈值后保持 2X 倍速，抬手不恢复
+  bool _isLongPressSpeedLocked = false;
+
+  /// 上滑锁定倍速的垂直位移阈值（手指向上滑过这么多像素视为锁定）
+  static const double _longPressLockUpwardThreshold = 80.0;
+
+  /// 续播目标位置缓存：与 Swift 的 `pendingSeekSeconds` 字段等价。
+  /// 模式：
+  ///   - initState / didUpdateWidget / _openMedia 三个入口都会调
+  ///     `_scheduleResumeSeek` 把 widget.resumeSeconds 写入 _pendingResumeSeconds
+  ///   - detail view 的 `_ensurePlayer` 已经在 widget build 之前用
+  ///     `Media(..., start: Duration(seconds: resume))` 让 libmpv
+  ///     从续播位置开始解码（**这是 libmpv 层的根本性修复**，根本
+  ///     不会经过 0 位置）
+  ///   - state.playing listener 在 player 真正开始播放时再 seek 一次
+  ///     兜底（防 libmpv 忽略 Media.start 参数的边缘情况）
+  ///   - apply 后清空
+  double? _pendingResumeSeconds;
+
+  /// 用于强制重建 Video widget，绕过 ANGLE surface 失效导致的黑屏
+  int _videoRebuildKey = 0;
+
+  // 分辨率与网速
+  String _resolutionText = '';
+  String _bitrateText = '';
+
+  // 临时手势状态
+  bool _showVolumeIndicator = false;
+  bool _showBrightnessIndicator = false;
+  bool _showForwardSeek = false;
+  bool _showBackwardSeek = false;
+  int _seekAccumulatedSeconds = 0;
+  double _gestureInitialVolume = 0;
+  double _gestureInitialBrightness = 0;
+  double _gestureSeekTemp = 0;
+  String _gestureHorizontalHint = ''; // 顶部水平拖动提示
+
+  static const List<double> _supportedSpeeds = [
+    0.5,
+    0.75,
+    1.0,
+    1.25,
+    1.5,
+    2.0,
+    3.0,
+  ];
+  static const Duration _hideDelay = Duration(seconds: 5);
+  static const int _seekStep = 10;
+  static const List<int> _skipPresets = [0, 30, 60, 90, 120, 180];
+  static const int _skipMaxSeconds = 600; // 自定义最大值 10 分钟
+
+  Timer? _hideTimer;
+  Timer? _bitrateTimer;
+  Timer? _indicatorTimer;
+
+  // ============================================================
+  // 全屏状态栏 - 电量 + 时间
+  // ============================================================
+
+  /// 电池电量 (0-100) ;  -1 表示未知 (iOS 模拟器 / 平台不支持)
+  int _batteryLevel = -1;
+  BatteryState _batteryState = BatteryState.unknown;
+  StreamSubscription<BatteryState>? _batteryStateSub;
+
+  /// 顶部状态栏显示的当前时间 (HH:mm) ;  每分钟刷新
+  String _currentTime = '';
+  Timer? _timeTimer;
+
+  // ============================================================
+
+  @override
+  void initState() {
+    super.initState();
+    // 跨 widget rebuild 持久化状态（按 widget.key 区分）
+    // detail view 在 immersive 切换时会重建 VideoPlayerWidget 的 Element，
+    // 没有这个缓存，state 重置会导致全屏 icon 卡住需要点两次。
+    _cacheKey = widget.key?.toString() ?? '_VideoPlayerWidget_default_';
+    _persisted = _stateCache.putIfAbsent(
+      _cacheKey,
+      () => _PersistedPlayerState(),
+    );
+    // 从缓存读回上次的全屏状态（如果上次处于全屏，用户切走再回来要保持）
+    _isNativeFullscreen = _persisted.isNativeFullscreen;
+    _isImmersive = _persisted.isImmersive;
+
+    // 启动时间定时器 (每分钟整点更新,用于全屏状态栏显示)
+    _currentTime = _formatTimeNow();
+    _timeTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!mounted) return;
+      final t = _formatTimeNow();
+      if (t != _currentTime) {
+        setState(() => _currentTime = t);
+      }
+    });
+
+    // 启动电池监听 (iOS / Android / 桌面端都支持, 失败时静默忽略)
+    _initBatteryMonitor();
+
+    if (widget.player != null) {
+      _player = widget.player!;
+      _ownsPlayer = false;
+    } else {
+      _player = Player(
+        configuration: const PlayerConfiguration(title: 'TVBox'),
+      );
+      _ownsPlayer = true;
+    }
+    // 优先复用外部注入的 VideoController（共享 player handle 即可保证 texture
+    // 通道稳定），仅在未注入时新建；这与 media_kit 自带控件条的全屏路由一致。
+    if (widget.controller != null) {
+      _controller = widget.controller!;
+    } else {
+      _controller = VideoController(_player);
+    }
+
+    // 同步读取 player 真实状态，避免全屏/普通模式切换时新实例显示"转圈"假象
+    _isPlaying = _player.state.playing;
+    _isBuffering = _player.state.buffering;
+    _position = _player.state.position;
+    _duration = _player.state.duration;
+    _playbackSpeed = _player.state.rate;
+
+    _player.stream.error.listen((error) {
+      if (error.isNotEmpty) widget.onError?.call();
+    });
+
+    _player.stream.playing.listen((playing) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = playing;
+          _isBuffering = false;
+        });
+        if (playing) {
+          widget.onPlaying?.call();
+          // 续播兜底：player 进入 playing 状态时, 如果 _pendingResumeSeconds
+          // 还有值, 说明 Media.start 没生效或被 libmpv 丢弃, 再次 seek 一次
+          // 对应 Swift `handlePlayingState → applyPendingSeekIfNeeded` 模式
+          _applyPendingResumeSeek();
+        }
+      }
+    });
+
+    _player.stream.buffering.listen((buffering) {
+      if (mounted) setState(() => _isBuffering = buffering);
+    });
+
+    _player.stream.position.listen((position) {
+      if (mounted) {
+        setState(() => _position = position);
+        widget.onPositionChanged?.call(position);
+      }
+    });
+
+    _player.stream.duration.listen((duration) {
+      if (mounted) setState(() => _duration = duration);
+    });
+
+    _player.stream.completed.listen((completed) {
+      if (completed) widget.onEnded?.call();
+    });
+
+    _volume = _player.state.volume;
+    if (_ownsPlayer) {
+      _openMedia();
+    } else {
+      // 外部注入 player（detail view 的常规路径）：build 期间 _ensurePlayer
+      // 已经调过 `_player.open(Media(url, httpHeaders: headers, start: ...))`，
+      // libmpv 会直接从续播位置开始解码。这里 _scheduleResumeSeek 只作
+      // safety net：如果 Media.start 失效，state.playing listener 会兜底 seek
+      //
+      // **关键**：仅在 _persisted.resumeApplied == false 时才触发续播。
+      // 切换全屏/退出全屏时外层 SingleChildScrollView+Column 树结构变化
+      // 会重建 VideoPlayerWidget 的 Element, initState 重跑, 此时 player
+      // 还在播 (例如 5min) 而 widget.resumeSeconds 是陈旧的 history 值
+      // (例如 30s), 触发续播会把 player seek 回 30s. 用持久化标志位
+      // 区分"首次 init"和"widget 重建", 重建时直接跳过.
+      if (_persisted.resumeApplied) {
+        debugPrint('=== initState: 续播已应用 (widget 重建), 跳过 ===');
+        _pendingResumeSeconds = null; // 防御清空, 防止 listener 误触发
+      } else {
+        _persisted.resumeApplied = true; // 先标记, 防重建 race 重复触发
+        _scheduleResumeSeek();
+      }
+    }
+    _scheduleHideControls();
+    _startBitrateTimer();
+
+    // **关键**：监听 WindowFullScreen 状态变化
+    // 让 _isNativeFullscreen 跟随 `WindowFullScreen.isActive || _isImmersive`，
+    // 消除 "setState 与 onFullScreenChanged 触发的 Obx rebuild" 之间的时序竞态，
+    // 避免 "全屏按钮没切换" / "需要点两次才能退出" 等状态机错位问题。
+    // iOS 端 WindowFullScreen 是 no-op，listener 不会被自动触发，所以
+    // _enterFullScreen / _exitFullScreen 末尾会**手动**再调一次
+    // _onWindowFullScreenChanged() 兜底。
+    WindowFullScreen.instance.activeNotifier.addListener(
+      _onWindowFullScreenChanged,
+    );
+  }
+
+  /// WindowFullScreen 状态变化回调
+  /// - 严格在 enter()/exit() **真正完成** 后才翻转
+  /// - 避免与 `_enterFullScreen` 内部的 setState/onFullScreenChanged 时序竞态
+  ///
+  /// **iOS 端**：WindowFullScreen.enter() 是 no-op，activeNotifier 不会触发，
+  /// 所以 listener 也要看我们自己的 `_isImmersive` 标志才能正确同步状态。
+  /// 桌面端：WindowFullScreen.isActive 翻转 → activeNotifier → listener 触发。
+  /// 手动调 _onWindowFullScreenChanged() 也能触发（用于 _enter/_exit 末尾兜底）。
+  ///
+  /// **ANGLE 黑屏问题**：
+  /// `setFullScreen(true)` 内部改 `GWL_STYLE` 加 `WS_POPUP`，触发 mpv ANGLE
+  /// surface 重建，与 Video widget 的 texture 通道重建存在竞态，会黑屏。
+  /// 解决：除立即 rebuild 外，延迟 100ms / 300ms / 600ms 再 rebuild 几次，
+  /// 等 ANGLE surface 重建稳定后再同步 Video widget。
+  void _onWindowFullScreenChanged() {
+    if (!mounted) return;
+    // 实际"是否在 fullscreen"= 桌面端 native fullscreen OR iOS 端 immersive
+    final isActive = WindowFullScreen.instance.isActive || _isImmersive;
+    if (isActive != _isNativeFullscreen) {
+      setState(() {
+        _isNativeFullscreen = isActive;
+        // 同步写入持久化缓存，避免 widget Element 重建时状态丢失
+        _persisted.isNativeFullscreen = isActive;
+        // 立即 rebuild：让 icon 立即切换
+        _videoRebuildKey++;
+      });
+      // 延迟多次 rebuild：绕过 ANGLE surface 重建竞态
+      _scheduleDelayedRebuild();
+    }
+  }
+
+  /// 延迟多次重建 Video widget，绕过 ANGLE surface 重建竞态
+  void _scheduleDelayedRebuild() {
+    for (final delayMs in const [100, 300, 600]) {
+      Future<void>.delayed(Duration(milliseconds: delayMs), () {
+        if (!mounted) return;
+        setState(() {
+          _videoRebuildKey++;
+        });
+      });
+    }
+  }
+
+  // ============================================================
+  // 电池 + 时间 (全屏状态栏)
+  // ============================================================
+
+  String _formatTimeNow() {
+    final now = DateTime.now();
+    final h = now.hour.toString().padLeft(2, '0');
+    final m = now.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  Future<void> _initBatteryMonitor() async {
+    try {
+      final battery = Battery();
+      // 初始电量
+      try {
+        final lvl = await battery.batteryLevel;
+        if (!mounted) return;
+        setState(() => _batteryLevel = lvl);
+      } catch (_) {}
+      // 监听充电状态变化 (电量由 stream triggered 时再读一次)
+      _batteryStateSub = battery.onBatteryStateChanged.listen((state) async {
+        if (!mounted) return;
+        setState(() => _batteryState = state);
+        try {
+          final lvl = await battery.batteryLevel;
+          if (!mounted) return;
+          setState(() => _batteryLevel = lvl);
+        } catch (_) {}
+      });
+    } catch (e) {
+      // 平台不支持 / 权限被拒 — 静默忽略,状态栏只显示时间
+      debugPrint('=== _initBatteryMonitor: 失败: $e ===');
+    }
+  }
+
+  /// 全屏状态栏 - 顶部右侧: 时间 + 电池图标
+  Widget _buildStatusBarInfo() {
+    final stateName = switch (_batteryState) {
+      BatteryState.charging => 'charging',
+      BatteryState.discharging => '',
+      BatteryState.full => 'full',
+      BatteryState.connectedNotCharging => 'plugged',
+      BatteryState.unknown => '',
+    };
+    final level = _batteryLevel < 0 ? '--' : '$_batteryLevel%';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 时间
+        Text(
+          _currentTime,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black87)],
+          ),
+        ),
+        const SizedBox(width: 10),
+        // 电池图标
+        Icon(
+          stateName == 'charging'
+              ? Icons.battery_charging_full
+              : _batteryLevel > 80
+              ? Icons.battery_full
+              : _batteryLevel > 50
+              ? Icons.battery_5_bar
+              : _batteryLevel > 20
+              ? Icons.battery_3_bar
+              : Icons.battery_1_bar,
+          color: Colors.white,
+          size: 16,
+          shadows: const [
+            Shadow(blurRadius: 4, color: Colors.black87),
+          ],
+        ),
+        const SizedBox(width: 2),
+        Text(
+          level,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black87)],
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  void didUpdateWidget(VideoPlayerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Player 引用发生变化（例如从外部重新注入）
+    if (oldWidget.player != widget.player) {
+      // 不做热切换：避免与外部管理冲突
+    }
+    // url 变化（新一集/新清晰度/外部 player.open）→ 触发续播 seek
+    if (oldWidget.url != widget.url) {
+      // url 变化：清理长按倍速锁定状态（基速可能也变了）
+      if (_isLongPressSpeedLocked || _isLongPressingFast) {
+        setState(() {
+          _isLongPressSpeedLocked = false;
+          _isLongPressingFast = false;
+        });
+        try {
+          _player.setRate(_playbackSpeed);
+        } catch (_) {}
+      }
+      // url 变化 = 新 media 加载, 重置 resumeApplied 让 initState / _openMedia
+      // 重新触发续播 (新 episode 的 resumeSeconds 是 0 或新一集的续播位置)
+      _persisted.resumeApplied = false;
+      if (_ownsPlayer) {
+        _openMedia();
+      } else {
+        // 外部注入 player（detail view 的常规路径）：detail view 的
+        // _buildPlayerWidget → _ensurePlayer 已经在 widget rebuild 之前
+        // 用 `Media(..., start: ...)` 让 libmpv 从续播位置直接解码
+        // 这里 _scheduleResumeSeek 只作 safety net
+        _persisted.resumeApplied = true;
+        _scheduleResumeSeek();
+      }
+    } else if ((oldWidget.resumeSeconds ?? -1) !=
+            (widget.resumeSeconds ?? -1) &&
+        widget.resumeSeconds != null &&
+        widget.resumeSeconds! > 0) {
+      // 同一 url 但 resumeSeconds 变化（例如清晰度切换时 _controller.currentPlaybackSeconds
+      // 透传到 resumeSeconds 用于记录）→ 不重复 seek（onPositionChanged 已经在持续更新）
+    }
+  }
+
+  void _openMedia() {
+    final headers = widget.headers ?? {};
+    // 续播：传 start 给 Media 让 libmpv 从续播位置开始解码，
+    // 根本避免"先从 0 播几秒再回退"的问题
+    final start = (widget.resumeSeconds != null && widget.resumeSeconds! > 0)
+        ? Duration(seconds: widget.resumeSeconds!.toInt())
+        : null;
+    // 新 media 加载: 重置 resumeApplied 让本次 _scheduleResumeSeek 真正生效
+    _persisted.resumeApplied = true;
+    _player.open(Media(widget.url, httpHeaders: headers, start: start));
+    // safety net: state.playing listener 会兜底 seek
+    _scheduleResumeSeek();
+  }
+
+  /// 续播 seek（safety net 模式，对应 Swift `applyPendingSeekIfNeeded`）
+  ///
+  /// **核心修复**：detail view 的 `_ensurePlayer` 在 widget build 之前
+  /// 已经用 `Media(..., start: Duration(seconds: resume))` 让 libmpv
+  /// 从续播位置开始解码（这是 libmpv 层的根本性修复，根本不会经过 0 位置）。
+  /// 本方法只作 safety net，覆盖 Media.start 失效的边缘情况：
+  ///
+  /// 1. 缓存 `_pendingResumeSeconds` 字段
+  /// 2. 立即 seek 一次（best effort，player 还没 loaded 时可能丢）
+  /// 3. 如果 `_player.state.playing` 已经是 true（player 已 loaded 并在播），
+  ///    立即调 `_applyPendingResumeSeek` 应用兜底
+  /// 4. 否则等 `_player.stream.playing` listener 在 initState 注册的回调
+  ///    触发时调 `_applyPendingResumeSeek` 应用兜底
+  ///
+  /// **防御性跳过**（关键）：进入本方法时检查 `_player.state.position`，
+  /// 如果**已经超过** target（用户已经看了视频），说明这不是"刚加载需要续播"
+  /// 场景，而是 widget 被重建（典型例子：切换全屏/退出全屏时外层
+  /// SingleChildScrollView+Column 树结构变化，触发 VideoPlayerWidget
+  /// Element 重建，initState 再次跑 `_scheduleResumeSeek`）。此时**绝不能**
+  /// 用陈旧的 `widget.resumeSeconds` (从 history 加载的旧值) 把用户当前
+  /// 看到的位置 (例如 5 分钟) seek 回原续播位置 (30s)。
+  ///
+  /// 对比旧实现（轮询 state.duration）：旧实现的问题是 state.duration
+  /// 在 player 处于 opening/buffering 时就已 > 0，但此时 autoplay 已经
+  /// 从 0 播了几帧，导致"先从 0 播几秒再回退"的现象。新的 state.playing
+  /// 检测在 player 真正开始播放时触发，配合 Media.start 根本避免该问题。
+  void _scheduleResumeSeek() {
+    final resume = widget.resumeSeconds;
+    if (resume == null || resume <= 0) return;
+    final target = Duration(seconds: resume.toInt());
+
+    // 防御：如果 player 已经在 target 之后 (用户已观看), 跳过 seek
+    // 覆盖"widget 重建"场景 (切换全屏/退出全屏触发 Element 重建)
+    try {
+      final cur = _player.state.position;
+      if (cur > target) {
+        debugPrint(
+            '=== _scheduleResumeSeek: cur=$cur > target=$target, 用户已观看, 跳过 ===');
+        _pendingResumeSeconds = null;
+        return;
+      }
+    } catch (_) {}
+
+    // 缓存到 _pendingResumeSeconds 供 state.playing listener 兜底
+    _pendingResumeSeconds = resume;
+
+    // 1) 立即 seek：best effort，player 还没 loaded 时 seek 命令可能被 libmpv 丢弃
+    try {
+      _player.seek(target);
+      debugPrint('=== _scheduleResumeSeek: 立即 seek 到 ${resume}s ===');
+    } catch (e) {
+      debugPrint('=== _scheduleResumeSeek: 立即 seek 失败: $e ===');
+    }
+
+    // 2) 如果 player 已经在 playing（罕见 edge case：initState 时 player
+    //    已经 loaded 完成），立即应用兜底
+    if (_player.state.playing) {
+      _applyPendingResumeSeek();
+    }
+    // 否则等 state.playing stream listener 触发时应用（见 initState）
+  }
+
+  /// 应用缓存的续播位置（state.playing 兜底），并清空缓存
+  /// 对应 Swift `applyPendingSeekIfNeeded`：
+  ///   guard let pendingSeekSeconds, pendingSeekSeconds > 0 else { return }
+  ///   seek(to: pendingSeekSeconds)
+  ///   self.pendingSeekSeconds = nil
+  ///
+  /// **防御性跳过**：与 `_scheduleResumeSeek` 同样的检查，
+  /// 如果 player 已经超过 target 则不再 seek 回去。
+  void _applyPendingResumeSeek() {
+    final pending = _pendingResumeSeconds;
+    if (pending == null || pending <= 0) return;
+    final target = Duration(seconds: pending.toInt());
+    try {
+      final cur = _player.state.position;
+      if (cur > target) {
+        debugPrint(
+            '=== _applyPendingResumeSeek: cur=$cur > target=$target, 用户已观看, 跳过 ===');
+        _pendingResumeSeconds = null;
+        return;
+      }
+      if ((cur - target).abs() < const Duration(seconds: 2)) {
+        debugPrint('=== _applyPendingResumeSeek: 已在 $pending 附近, 跳过 ===');
+        _pendingResumeSeconds = null;
+        return;
+      }
+    } catch (_) {}
+    _pendingResumeSeconds = null;
+    try {
+      _player.seek(target);
+      debugPrint('=== _applyPendingResumeSeek: 兜底 seek 到 ${pending}s ===');
+    } catch (e) {
+      debugPrint('=== _applyPendingResumeSeek: 兜底 seek 失败: $e ===');
+    }
+  }
+
+  void _startBitrateTimer() {
+    _bitrateTimer?.cancel();
+    // 模拟网速采样；真实项目中可以接入 m3u8/ts 抓包或后端接口
+    _bitrateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      // media_kit 不直接暴露码率，我们用最近一次 downloadedBytes 推算
+      final stats = _player.state;
+      if (stats.playing) {
+        setState(() {
+          // 重新渲染时间并通过 _updateResolutionFromTrack 更新分辨率
+          _updateResolutionFromTrack();
+        });
+      }
+    });
+  }
+
+  void _updateResolutionFromTrack() {
+    // media_kit 当前不直接提供视频分辨率/码率接口
+    // 这里用视频宽高比显示估算的分辨率，并结合 16:9 / 4:3 推断高度
+    final w = _player.state.width;
+    final h = _player.state.height;
+    if (w != null && h != null && w > 0 && h > 0) {
+      _resolutionText = '${w.toInt()}×${h.toInt()}';
+    } else {
+      _resolutionText = '';
+    }
+    // 简单的占位网速：使用 media_kit 的 audioBitrate/videoParams 暂时不可用
+    // 这里采用固定显示为播放中，避免空字段。
+    if (_isPlaying) {
+      // 估算码率（约 2 Mbps），仅作占位
+      _bitrateText = '2.0Mbps';
+    } else {
+      _bitrateText = '';
+    }
+  }
+
+  /// 唤醒控制条，并在空闲后自动隐藏
+  void _scheduleHideControls() {
+    _hideTimer?.cancel();
+    if (_isLocked || _showEpisodeSheet || _showSettingsSheet) {
+      _showControls = _isLocked || true;
+      return;
+    }
+    _hideTimer = Timer(_hideDelay, () {
+      if (!mounted) return;
+      if (_isDragging || _showEpisodeSheet || _showSettingsSheet) {
+        _scheduleHideControls();
+        return;
+      }
+      setState(() => _showControls = false);
+    });
+  }
+
+  void _toggleControls() {
+    // 长按倍速锁定时：单击只解除锁定，不切换控制条
+    if (_isLongPressSpeedLocked) {
+      _unlockLongPressSpeed();
+      return;
+    }
+    if (_isLocked) return;
+    setState(() => _showControls = !_showControls);
+    if (_showControls) _scheduleHideControls();
+  }
+
+  /// 解除长按倍速锁定：恢复 _playbackSpeed，清掉相关标志
+  void _unlockLongPressSpeed() {
+    if (!_isLongPressSpeedLocked && !_isLongPressingFast) return;
+    setState(() {
+      _isLongPressSpeedLocked = false;
+      _isLongPressingFast = false;
+    });
+    _player.setRate(_playbackSpeed);
+  }
+
+  void _togglePlayPause() {
+    if (_player.state.playing) {
+      _player.pause();
+    } else {
+      _player.play();
+    }
+    _scheduleHideControls();
+  }
+
+  /// 相对当前位置偏移
+  void _seekRelative(Duration delta) {
+    final pos = _player.state.position;
+    final target = pos + delta;
+    _player.seek(target < Duration.zero ? Duration.zero : target);
+    _scheduleHideControls();
+  }
+
+  /// 用户"切换全屏"统一入口：调 [WindowFullScreen.instance.toggle]。
+  ///
+  /// 注意：
+  /// - **不要调** `_videoKey.currentState?.toggleFullscreen()` —— 它会推入
+  ///   rootNavigator 全屏路由，与 GetX 路由栈冲突。
+  /// - **不要调** `defaultEnterNativeFullscreen` / `defaultExitNativeFullscreen` —
+  ///   这俩会改 GWL_STYLE 加 `WS_POPUP`，导致 ANGLE surface 重建冲突，画面消失。
+  /// - 用 `WindowFullScreen` 管理窗口（与 PiP 一致的 setSize + setPosition +
+  ///   setTitleBarStyle 流程），PiP 的 enter/exit 已被验证正常。
+  /// - **状态机**：`_isNativeFullscreen` 由 `WindowFullScreen.activeNotifier`
+  ///   listener 严格驱动（在 enter/exit 真正完成后才翻转），本方法**不再**
+  ///   setState `_isNativeFullscreen`，避免与 `onFullScreenChanged` 触发的
+  ///   Obx rebuild 时序竞态（导致"icon 不切换"或"需要点两次"）。
+  Future<void> _onUserToggleFullscreen() async {
+    // 用真实状态决策,而非陈旧的 _isNativeFullscreen
+    // (避免用户用 Esc / 系统级操作退出全屏后,icon 状态未同步导致必须点两次)
+    final currentlyFull = WindowFullScreen.instance.isActive || _isImmersive;
+    debugPrint(
+      '=== _onUserToggleFullscreen: currentlyFull=$currentlyFull '
+      'isActive=${WindowFullScreen.instance.isActive} '
+      '_isImmersive=$_isImmersive ===',
+    );
+    // 互斥：先退出 PiP
+    if (VideoPlayerPip.instance.isActive) {
+      await VideoPlayerPip.instance.exit();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    if (currentlyFull) {
+      await _exitFullScreen();
+    } else {
+      await _enterFullScreen();
+    }
+  }
+
+  /// 用户"退出全屏"统一入口（Esc 键、返回按钮）
+  /// - 处于全屏：调 WindowFullScreen.exit
+  /// - 处于 PiP 模式：退出 PiP
+  /// - 处于正常模式：当作返回键
+  Future<void> _onUserExitFullscreen() async {
+    debugPrint(
+      '=== _onUserExitFullscreen: _isNativeFullscreen=$_isNativeFullscreen, isPip=${VideoPlayerPip.instance.isActive} ===',
+    );
+    if (_isNativeFullscreen) {
+      await _exitFullScreen();
+      return;
+    }
+    if (VideoPlayerPip.instance.isActive) {
+      await VideoPlayerPip.instance.exit();
+      return;
+    }
+    widget.onBack?.call();
+  }
+
+  /// 调 WindowFullScreen 进入全屏
+  ///
+  /// **状态机说明**：本方法会**同时**翻 `_isImmersive` 标志（iOS 路径的
+  /// 状态来源）+ 调 `WindowFullScreen.enter()`（桌面端路径）。结束后
+  /// 手动调 `_onWindowFullScreenChanged()` 兜底同步 `_isNativeFullscreen`
+  /// —— 桌面端 listener 已经被 activeNotifier 触发过一次，这里再调是
+  /// no-op；iOS 端 listener 不会被自动触发，所以手动调是必需的。
+  ///
+  /// **iOS 端**：除了切窗口外，**必须**调
+  /// `SystemChrome.setPreferredOrientations` 强制横屏，否则系统会保持
+  /// 竖屏全屏（视频左右黑边）。
+  Future<void> _enterFullScreen() async {
+    // 用真实状态判断,避免重复进入全屏
+    // 注意: 不能用陈旧 _isNativeFullscreen 字段判断 (widget Element 重建时会从 cache 读陈旧值)
+    if (WindowFullScreen.instance.isActive || _isImmersive) {
+      debugPrint('=== _enterFullScreen: skip (已处于全屏) ===');
+      return;
+    }
+    debugPrint('=== _enterFullScreen: start ===');
+    // iOS 端：先强制横屏（必须在通知 detail view 切换 immersive 之前）
+    if (Platform.isIOS) {
+      await SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
+    // **关键**: 先写缓存, 再通知 detail view 切换 immersive 模式
+    // 这样 detail view rebuild 导致 widget Element 销毁重建时,
+    // 新 Element 的 initState 从 cache 读到的就是正确的全屏状态
+    _isImmersive = true;
+    _isNativeFullscreen = true;
+    _persisted.isImmersive = true;
+    _persisted.isNativeFullscreen = true;
+    // 通知 detail view 切换 immersive 模式（隐藏 AppBar、视频铺满）
+    widget.onFullScreenChanged?.call(true);
+    try {
+      await WindowFullScreen.instance.enter();
+      debugPrint('=== _enterFullScreen: WindowFullScreen enter OK ===');
+    } catch (e) {
+      debugPrint('=== _enterFullScreen: WindowFullScreen enter failed: $e ===');
+    }
+    // 兜底同步: 桌面端 activeNotifier 已触发过 listener (在 mounted 新 Element 上)
+    // iOS 端 no-op, 用 cache 写入保证状态正确
+    if (mounted) _onWindowFullScreenChanged();
+    // 确保 player 在播放（窗口 resize 可能让 mpv 进入 pause 状态）
+    try {
+      if (!_player.state.playing) {
+        await _player.play();
+      }
+    } catch (_) {}
+  }
+
+  /// 调 WindowFullScreen 退出全屏
+  ///
+  /// 状态机说明同 [_enterFullScreen]：先翻 `_isImmersive = false`，
+  /// 调 `WindowFullScreen.exit()`，最后手动调 `_onWindowFullScreenChanged()`
+  /// 兜底同步 iOS 端的状态。
+  ///
+  /// **iOS 端**：恢复允许竖屏 + 横屏。
+  Future<void> _exitFullScreen() async {
+    // 用真实状态判断,避免重复退出 (no-op 时让 _onWindowFullScreenChanged 同步状态)
+    if (!WindowFullScreen.instance.isActive && !_isImmersive) {
+      debugPrint('=== _exitFullScreen: skip (不在全屏) ===');
+      return;
+    }
+    debugPrint('=== _exitFullScreen: start ===');
+    // **关键**: 先写缓存, 再通知 detail view 切回正常模式
+    // detail view rebuild 会销毁 video player Element + 创建新 Element,
+    // 新 Element 的 initState 从 cache 读到的应该是退出全屏状态
+    _isImmersive = false;
+    _isNativeFullscreen = false;
+    _persisted.isImmersive = false;
+    _persisted.isNativeFullscreen = false;
+    // 通知 detail view 切回正常模式
+    widget.onFullScreenChanged?.call(false);
+    try {
+      await WindowFullScreen.instance.exit();
+      debugPrint('=== _exitFullScreen: WindowFullScreen exit OK ===');
+    } catch (e) {
+      debugPrint('=== _exitFullScreen: WindowFullScreen exit failed: $e ===');
+    }
+    // iOS 端：恢复允许竖屏 + 横屏
+    if (Platform.isIOS) {
+      await SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
+    // 等待窗口 resize 完成再继续
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    // 兜底同步: 仅在当前 Element 仍 mounted 时执行
+    // (await 期间 detail view 可能已 rebuild 销毁当前 Element)
+    if (mounted) _onWindowFullScreenChanged();
+    // 确保 player 在播放
+    try {
+      if (!_player.state.playing) {
+        await _player.play();
+      }
+    } catch (_) {}
+  }
+
+  void _seekTo(Duration position) {
+    final clamped = position < Duration.zero
+        ? Duration.zero
+        : (position > _duration && _duration > Duration.zero
+              ? _duration
+              : position);
+    _player.seek(clamped);
+  }
+
+  void _setSpeed(double speed) {
+    _player.setRate(speed);
+    setState(() => _playbackSpeed = speed);
+    _scheduleHideControls();
+  }
+
+  void _setVideoFit(VideoFitType fit) {
+    setState(() => _videoFit = fit);
+    _scheduleHideControls();
+  }
+
+  void _toggleLock() {
+    setState(() {
+      _isLocked = !_isLocked;
+      if (_isLocked) {
+        _showControls = false;
+      } else {
+        _showControls = true;
+        _scheduleHideControls();
+      }
+    });
+  }
+
+  void _skipIntro() {
+    if (widget.skipIntroSeconds > 0) {
+      _seekTo(Duration(seconds: widget.skipIntroSeconds));
+      _scheduleHideControls();
+    }
+  }
+
+  void _skipOutro() {
+    if (widget.skipOutroSeconds > 0 && _duration > Duration.zero) {
+      _seekTo(_duration - Duration(seconds: widget.skipOutroSeconds));
+      _scheduleHideControls();
+    }
+  }
+
+  void _setVolume(double v) {
+    final clamped = v.clamp(0.0, 1.0);
+    _player.setVolume(clamped * 100); // media_kit 用 0-100
+    setState(() => _volume = clamped);
+  }
+
+  void _toggleMute() {
+    if (_volume > 0) {
+      _setVolume(0);
+    } else {
+      _setVolume(1);
+    }
+    _scheduleHideControls();
+  }
+
+  void _setBrightness(double b) {
+    setState(() => _brightness = b.clamp(0.0, 1.0));
+  }
+  // _setBrightness 保留供后续接入系统亮度 API 时使用（例如 screen_brightness 插件）
+
+  void _showIndicatorLater() {
+    _indicatorTimer?.cancel();
+    _indicatorTimer = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      setState(() {
+        _showVolumeIndicator = false;
+        _showBrightnessIndicator = false;
+        _showForwardSeek = false;
+        _showBackwardSeek = false;
+        _gestureHorizontalHint = '';
+      });
+    });
+  }
+
+  String _formatDuration(Duration d) {
+    final hours = d.inHours;
+    final minutes = d.inMinutes.remainder(60);
+    final seconds = d.inSeconds.remainder(60);
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:'
+          '${minutes.toString().padLeft(2, '0')}:'
+          '${seconds.toString().padLeft(2, '0')}';
+    }
+    return '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
+
+  String _formatSpeed(double speed) {
+    if (speed == speed.roundToDouble()) return '${speed.toInt()}X';
+    return '${speed.toStringAsFixed(2)}X';
+  }
+
+  @override
+  void dispose() {
+    WindowFullScreen.instance.activeNotifier.removeListener(
+      _onWindowFullScreenChanged,
+    );
+    _hideTimer?.cancel();
+    _bitrateTimer?.cancel();
+    _indicatorTimer?.cancel();
+    // 全屏状态栏 (时间 + 电池)
+    _timeTimer?.cancel();
+    _batteryStateSub?.cancel();
+    if (_ownsPlayer) {
+      _player.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        // Esc 退出全屏（native fullscreen 退出）
+        SingleActivator(LogicalKeyboardKey.escape): _onUserExitFullscreen,
+        // F 切换全屏
+        SingleActivator(LogicalKeyboardKey.keyF): _onUserToggleFullscreen,
+        // 空格 播放/暂停
+        SingleActivator(LogicalKeyboardKey.space): _togglePlayPause,
+        // 左右箭头 快进/快退 5 秒
+        SingleActivator(LogicalKeyboardKey.arrowLeft): () {
+          _seekRelative(-const Duration(seconds: 5));
+        },
+        SingleActivator(LogicalKeyboardKey.arrowRight): () {
+          _seekRelative(const Duration(seconds: 5));
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: ColoredBox(
+          color: Colors.black,
+          // PiP 模式下用 DragToMoveArea 包住整块内容，让用户能通过拖动视频
+          // 来移动无标题栏的小窗口；onPanStart 只在用户真正拖动时才触发，
+          // 单击事件仍会冒泡到内部的 _buildGestureLayer() 用于显示/隐藏控件
+          child: _buildRootArea(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRootArea() {
+    final stack = _buildContentStack();
+    if (widget.isPipMode) {
+      return DragToMoveArea(child: stack);
+    }
+    return stack;
+  }
+
+  Widget _buildContentStack() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // 视频画面
+        Positioned.fill(
+          child: Video(
+            // 用 _videoRebuildKey 让 key 变化时重建 Video widget（绕过 ANGLE surface 失效）
+            key: ValueKey('video_$_videoRebuildKey'),
+            controller: _controller,
+            controls: null,
+            fit: _videoFit.boxFit,
+            aspectRatio: _videoFit.aspectRatio,
+            // **重要**：不传 onEnterFullscreen / onExitFullscreen 回调。
+            // 这两个回调只在 `defaultEnterNativeFullscreen` 被调时触发，
+            // 但我们不用 native fullscreen（避免 ANGLE 黑屏），改用
+            // 自定义 `WindowFullScreen` 流程。`onEnterFullscreen` 留空
+            // 后 media_kit 内部不会自动调 native API，避免状态机冲突。
+          ),
+        ),
+
+        // 亮度遮罩 - 用半透明黑色覆盖调整亮度
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Container(
+              color: Colors.black.withValues(alpha: 1.0 - _brightness),
+            ),
+          ),
+        ),
+
+        // 缓冲指示器
+        if (_isBuffering)
+          const Center(
+            child: SizedBox(
+              width: 36,
+              height: 36,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 3,
+              ),
+            ),
+          ),
+
+        // 手势层（覆盖整个区域，识别单击/双击/长按/拖动）
+        Positioned.fill(child: _buildGestureLayer()),
+
+        // 顶部水平拖动提示
+        if (_gestureHorizontalHint.isNotEmpty)
+          Positioned(
+            top: 60,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: _GestureHintBubble(text: _gestureHorizontalHint),
+            ),
+          ),
+
+        // 顶部导航栏
+        if (_showControls && !_isLocked) _buildHeaderBar(),
+
+        // 锁定按钮
+        if (_showControls || _isLocked) _buildLockButton(),
+
+        // 底部控制区域
+        if (_showControls && !_isLocked) _buildBottomControls(),
+
+        // 跳过片头/片尾按钮
+        if (!_isLocked) _buildSkipButtons(),
+
+        // 音量指示器
+        if (_showVolumeIndicator) _buildVolumeIndicator(),
+        if (_showBrightnessIndicator) _buildBrightnessIndicator(),
+        if (_showForwardSeek || _showBackwardSeek)
+          _buildSeekIndicator(_showForwardSeek),
+
+        // 长按倍速提示 (屏幕中央 2X + 上滑锁定提示)
+        if (_isLongPressingFast || _isLongPressSpeedLocked)
+          _buildLongPressSpeedHint(),
+
+        // 剧集选择覆盖层
+        if (_showEpisodeSheet) _buildEpisodeOverlay(),
+
+        // 设置弹窗
+        if (_showSettingsSheet) _buildSettingsSheet(),
+      ],
+    );
+  }
+
+  // ============================================================
+  // 手势处理层
+  // ============================================================
+
+  Widget _buildGestureLayer() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        // **关键**：把长按手势拆到**外层** GestureDetector，
+        // 避免与内层 onTap / onDoubleTap 在手势竞技场中相互抢占
+        // （Flutter 默认会让长按等待双击判定窗口结束，从而失效）。
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          // 外层只处理长按：长按 2 倍速 + 上滑锁定倍速
+          onLongPressStart: (details) {
+            if (_isLocked) return;
+            // 锁定状态下再次长按：直接解除锁定（不切换速度）
+            if (_isLongPressSpeedLocked) {
+              setState(() {
+                _isLongPressSpeedLocked = false;
+                _isLongPressingFast = false;
+              });
+              _player.setRate(_playbackSpeed);
+              return;
+            }
+            _player.setRate(_playbackSpeed * 2);
+            setState(() => _isLongPressingFast = true);
+          },
+          onLongPressMoveUpdate: (details) {
+            if (_isLocked) return;
+            // 锁定状态下不再检测上滑
+            if (_isLongPressSpeedLocked) return;
+            // 上滑超过阈值 → 锁定倍速（抬手不恢复）
+            // offsetFromOrigin 是从长按开始触点开始的累计偏移,
+            // dy 负值表示手指向上滑
+            if (details.offsetFromOrigin.dy < -_longPressLockUpwardThreshold) {
+              setState(() => _isLongPressSpeedLocked = true);
+            }
+          },
+          onLongPressEnd: (_) {
+            if (_isLocked) return;
+            // 锁定状态下抬手：保持 2X 倍速，仅清掉"按下中"标志
+            if (_isLongPressSpeedLocked) {
+              setState(() => _isLongPressingFast = false);
+              return;
+            }
+            _player.setRate(_playbackSpeed);
+            setState(() => _isLongPressingFast = false);
+          },
+          onLongPressCancel: () {
+            if (_isLocked) return;
+            if (_isLongPressSpeedLocked) {
+              setState(() => _isLongPressingFast = false);
+              return;
+            }
+            _player.setRate(_playbackSpeed);
+            setState(() => _isLongPressingFast = false);
+          },
+          // 内层处理单击/双击/拖动
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _toggleControls,
+            onDoubleTapDown: (details) {
+              final x = details.localPosition.dx;
+              if (x < width / 4) {
+                _seekBy(-_seekStep, isLeft: true);
+              } else if (x > width * 3 / 4) {
+                _seekBy(_seekStep, isLeft: false);
+              } else {
+                _togglePlayPause();
+              }
+            },
+            onDoubleTap: () {},
+            onPanStart: (details) {
+              if (_isLocked) return;
+              _gestureInitialVolume = _volume;
+              _gestureInitialBrightness = _brightness;
+              _gestureSeekTemp = _position.inMilliseconds.toDouble();
+              _gesturePanStartPosition = details.localPosition;
+              _gesturePanAxis = null;
+              _scheduleHideControls();
+            },
+            onPanUpdate: (details) {
+              if (_isLocked) return;
+              final dx = details.localPosition.dx - _gesturePanStartPosition.dx;
+              final dy = details.localPosition.dy - _gesturePanStartPosition.dy;
+              final absDx = dx.abs();
+              final absDy = dy.abs();
+
+              // 第一次确定手势方向
+              _gesturePanAxis ??= absDx > absDy * 1.5
+                  ? PanAxis.horizontal
+                  : PanAxis.vertical;
+
+              if (_gesturePanAxis == PanAxis.horizontal) {
+                if (_duration > Duration.zero) {
+                  final totalMs = _duration.inMilliseconds.toDouble();
+                  // 屏幕宽度对应整个 duration 的 30%
+                  final scale = totalMs * 0.3;
+                  final deltaMs = (dx / width) * scale;
+                  _gestureSeekTemp = (_gestureSeekTemp + deltaMs).clamp(
+                    0.0,
+                    totalMs,
+                  );
+                  final newPos = Duration(
+                    milliseconds: _gestureSeekTemp.round(),
+                  );
+                  setState(() {
+                    _isDragging = true;
+                    _dragValue = _gestureSeekTemp;
+                    _gestureHorizontalHint =
+                        '${_gestureSeekTemp > _position.inMilliseconds ? '+' : ''}'
+                        '${(newPos.inSeconds - _position.inSeconds)}秒'
+                        '  ${_formatDuration(newPos)}';
+                  });
+                }
+              } else {
+                // 垂直：左侧亮度，右侧音量
+                if (_gesturePanStartPosition.dx < width / 2) {
+                  final newB =
+                      (_gestureInitialBrightness - dy / constraints.maxHeight)
+                          .clamp(0.0, 1.0);
+                  _setBrightness(newB);
+                  setState(() {
+                    _showBrightnessIndicator = true;
+                    _showVolumeIndicator = false;
+                  });
+                } else {
+                  final newV =
+                      (_gestureInitialVolume - dy / constraints.maxHeight)
+                          .clamp(0.0, 1.0);
+                  setState(() {
+                    _setVolume(newV);
+                    _showVolumeIndicator = true;
+                    _showBrightnessIndicator = false;
+                  });
+                }
+                _showIndicatorLater();
+              }
+            },
+            onPanEnd: (_) {
+              if (_isLocked) return;
+              if (_gesturePanAxis == PanAxis.horizontal) {
+                _seekTo(Duration(milliseconds: _gestureSeekTemp.round()));
+                setState(() {
+                  _isDragging = false;
+                  _gestureHorizontalHint = '';
+                });
+              } else {
+                setState(() {
+                  _showVolumeIndicator = false;
+                  _showBrightnessIndicator = false;
+                });
+              }
+              _gesturePanAxis = null;
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Offset _gesturePanStartPosition = Offset.zero;
+  PanAxis? _gesturePanAxis;
+
+  void _seekBy(int seconds, {required bool isLeft}) {
+    if (_isLocked) return;
+    final target = _player.state.position + Duration(seconds: seconds);
+    _seekTo(target);
+    setState(() {
+      _seekAccumulatedSeconds += seconds;
+      if (isLeft) {
+        _showBackwardSeek = true;
+        _showForwardSeek = false;
+      } else {
+        _showForwardSeek = true;
+        _showBackwardSeek = false;
+      }
+    });
+    _showIndicatorLater();
+    _scheduleHideControls();
+  }
+
+  // ============================================================
+  // 顶部导航栏 - 对应 Swift headerBar
+  // ============================================================
+
+  Widget _buildHeaderBar() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: _gradientTopContainer(
+        child: Row(
+          children: [
+            // 标题占满剩余空间（之前的"返回"按钮已移除：在播放器全屏
+            // 模式下没"上一页"概念，靠 detail view 自己的 AppBar back；正常
+            // 模式点这个按钮就调到 _onUserExitFullscreen 走 Get.back，
+            // 但和 detail view 自己的 back 重复，反而容易误触）
+            if (_displayTitle.isNotEmpty)
+              Expanded(
+                child: Text(
+                  _displayTitle,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )
+            else
+              const Spacer(),
+
+            // 分辨率
+            if (_resolutionText.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  _resolutionText,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+
+            // 网速
+            if (_bitrateText.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  _bitrateText,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+
+            // 画中画
+            _iconButton(
+              icon: Icons.picture_in_picture_alt,
+              size: 20,
+              width: 36,
+              onTap: () {
+                _scheduleHideControls();
+                _togglePiP();
+              },
+            ),
+
+            // 投屏（AirPlay / DLNA 入口）
+            // iOS 端调原生 AVRoutePickerView，弹出系统 AirPlay 选择器
+            // 其他平台暂不实现，提示用户
+            _iconButton(
+              icon: Icons.cast,
+              size: 20,
+              width: 36,
+              onTap: () {
+                _scheduleHideControls();
+                _toggleCast();
+              },
+            ),
+
+            // 全屏状态栏: 时间 + 电池 (右侧,与控制按钮分隔,信息醒目)
+            // 只在 native fullscreen 模式下显示,沉浸式给视频更多空间
+            if (_isNativeFullscreen) ...[
+              const SizedBox(width: 4),
+              _buildStatusBarInfo(),
+            ],
+
+            // 设置
+            _iconButton(
+              icon: Icons.more_horiz,
+              size: 22,
+              width: 40,
+              onTap: () {
+                setState(() => _showSettingsSheet = true);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 锁定按钮 - 对应 Swift lockButton
+  // ============================================================
+
+  Widget _buildLockButton() {
+    // iOS 横屏时左侧 notch 也会占位, 用 MediaQuery.padding.left 偏移
+    final leftSafe = MediaQuery.of(context).padding.left;
+    return Positioned(
+      left: 12 + leftSafe,
+      top: 0,
+      bottom: 0,
+      child: Center(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _toggleLock,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.4),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _isLocked ? Icons.lock : Icons.lock_open,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 底部控制区域 - 对应 Swift bottomSection
+  // ============================================================
+
+  Widget _buildBottomControls() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: _gradientBottomContainer(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 进度条
+            _buildProgressBar(),
+            // 控制按钮行
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+              child: Row(
+                children: [
+                  // 左侧: 播放/暂停 + 时间 + 上一集 + 下一集
+                  _buildPlayPauseButton(),
+                  _buildTimeView(),
+                  if (widget.canPlayPrevious)
+                    _iconButton(
+                      icon: Icons.skip_previous,
+                      size: 22,
+                      width: 36,
+                      onTap: () {
+                        _scheduleHideControls();
+                        widget.onPlayPrevious?.call();
+                      },
+                    ),
+                  if (widget.canPlayNext)
+                    _iconButton(
+                      icon: Icons.skip_next,
+                      size: 22,
+                      width: 36,
+                      onTap: () {
+                        _scheduleHideControls();
+                        widget.onPlayNext?.call();
+                      },
+                    ),
+                  const Spacer(),
+                  // 右侧: 静音 + 选集 + 倍速 + 画面比例 + 全屏
+                  _iconButton(
+                    icon: _volume > 0
+                        ? (_volume < 0.33
+                              ? Icons.volume_down
+                              : (_volume < 0.66
+                                    ? Icons.volume_up
+                                    : Icons.volume_up))
+                        : Icons.volume_off,
+                    size: 22,
+                    width: 36,
+                    onTap: _toggleMute,
+                  ),
+                  if (widget.episodeNames.isNotEmpty)
+                    _iconButton(
+                      icon: Icons.list,
+                      size: 22,
+                      width: 36,
+                      onTap: () {
+                        setState(() => _showEpisodeSheet = true);
+                      },
+                    ),
+                  _buildVideoFitMenu(),
+                  _buildSpeedMenu(),
+                  _iconButton(
+                    icon: _isNativeFullscreen
+                        ? Icons.fullscreen_exit
+                        : Icons.fullscreen,
+                    size: 24,
+                    width: 42,
+                    onTap: () {
+                      _scheduleHideControls();
+                      _onUserToggleFullscreen();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 跳过片头/片尾按钮
+  // ============================================================
+
+  Widget _buildSkipButtons() {
+    final showIntro =
+        widget.skipIntroSeconds > 0 &&
+        _position.inSeconds > 0 &&
+        _position.inSeconds < widget.skipIntroSeconds;
+    final showOutro =
+        widget.skipOutroSeconds > 0 &&
+        _duration > Duration.zero &&
+        _position.inSeconds > _duration.inSeconds - widget.skipOutroSeconds;
+
+    if (!showIntro && !showOutro) return const SizedBox.shrink();
+
+    return Positioned(
+      top: 70,
+      left: 0,
+      right: 0,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            if (showIntro)
+              _skipButton(
+                text: '跳过片头',
+                onTap: _skipIntro,
+              ),
+            const Spacer(),
+            if (showOutro)
+              _skipButton(
+                text: '跳过片尾',
+                onTap: _skipOutro,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _skipButton({required String text, required VoidCallback onTap}) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.skip_next,
+              color: Colors.white,
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 音量/亮度/进度指示器
+  // ============================================================
+
+  Widget _buildVolumeIndicator() {
+    return Center(
+      child: _IndicatorBadge(
+        icon: _volume <= 0
+            ? Icons.volume_off
+            : (_volume < 0.5 ? Icons.volume_down : Icons.volume_up),
+        text: '${(_volume * 100).round()}%',
+      ),
+    );
+  }
+
+  /// 长按倍速提示 - 顶部居中紧凑浮层
+  /// - 锁定时：显示 "2X 已锁定，单击取消"
+  /// - 按下中未锁定：显示 "2X 长按倍速中" + "↑ 上滑锁定"
+  ///
+  /// **2026-07-09 调整**: 尺寸缩小 + 透明度降低 + 位置上移
+  ///   原版用屏幕中央大圆角方块 (padding 22x16, font 36/13/11, alpha 0.55-0.7),
+  ///   严重遮挡视频画面. 改成顶部小药丸 (padding 12x8, font 22/11/9, alpha 0.28),
+  ///   居中靠上 (top: 48), 不再压住视频主体.
+  Widget _buildLongPressSpeedHint() {
+    final speed = _playbackSpeed * 2;
+    final speedLabel = _formatSpeed(speed);
+    final locked = _isLongPressSpeedLocked;
+    return Positioned(
+      top: 48,
+      left: 0,
+      right: 0,
+      child: IgnorePointer(
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.28),
+              borderRadius: BorderRadius.circular(24),
+              border: locked
+                  ? Border.all(color: AppTheme.accentColor, width: 1)
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 倍速大字
+                Text(
+                  speedLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'monospace',
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // 提示文字 (中间)
+                Text(
+                  locked ? '已锁定' : '长按倍速中',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 0.5,
+                  height: 12,
+                  color: Colors.white.withValues(alpha: 0.35),
+                ),
+                const SizedBox(width: 8),
+                // 底部小提示 (右侧)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (locked) ...[
+                      const Icon(
+                        Icons.touch_app,
+                        color: Colors.white70,
+                        size: 11,
+                      ),
+                      const SizedBox(width: 3),
+                      const Text(
+                        '点击解除',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 9,
+                        ),
+                      ),
+                    ] else ...[
+                      const Icon(
+                        Icons.arrow_upward,
+                        color: Colors.white70,
+                        size: 11,
+                      ),
+                      const SizedBox(width: 3),
+                      const Text(
+                        '上滑锁定',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 9,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrightnessIndicator() {
+    return Center(
+      child: _IndicatorBadge(
+        icon: Icons.brightness_6,
+        text: '${(_brightness * 100).round()}%',
+      ),
+    );
+  }
+
+  Widget _buildSeekIndicator(bool isForward) {
+    return Positioned.fill(
+      child: Row(
+        children: [
+          if (!isForward)
+            Expanded(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.3),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isForward ? Icons.fast_forward : Icons.fast_rewind,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${isForward ? '快进' : '快退'}${_seekAccumulatedSeconds.abs()}秒',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (isForward)
+            Expanded(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.3),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.fast_forward,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '快进${_seekAccumulatedSeconds.abs()}秒',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // 自定义进度条 - 对应 Swift PlayerProgressBar
+  // ============================================================
+
+  Widget _buildProgressBar() {
+    final totalMs = _duration.inMilliseconds.toDouble();
+    final currentMs = _isDragging
+        ? _dragValue
+        : _position.inMilliseconds.toDouble();
+    final progress = totalMs > 0 ? (currentMs / totalMs).clamp(0.0, 1.0) : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SizedBox(
+        height: 20,
+        child: _ProgressBarGesture(
+          progress: progress,
+          onSeekToRatio: (ratio) {
+            if (totalMs > 0) {
+              final targetMs = ratio * totalMs;
+              _seekTo(Duration(milliseconds: targetMs.round()));
+            }
+          },
+          onDrag: (ratio) {
+            setState(() {
+              _isDragging = true;
+              _dragValue = ratio * totalMs;
+            });
+            _scheduleHideControls();
+          },
+          onDragEnd: () {
+            setState(() => _isDragging = false);
+            _scheduleHideControls();
+          },
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 播放/暂停按钮
+  // ============================================================
+
+  Widget _buildPlayPauseButton() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _togglePlayPause,
+      child: SizedBox(
+        width: 42,
+        height: 34,
+        child: Center(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 150),
+            child: Icon(
+              _isPlaying ? Icons.pause : Icons.play_arrow,
+              key: ValueKey(_isPlaying),
+              color: Colors.white,
+              size: 26,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 时间显示
+  // ============================================================
+
+  Widget _buildTimeView() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _formatDuration(
+              _isDragging
+                  ? Duration(milliseconds: _dragValue.round())
+                  : _position,
+            ),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontFamily: 'monospace',
+            ),
+          ),
+          Text(
+            _duration > Duration.zero ? _formatDuration(_duration) : '--:--',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.82),
+              fontSize: 10,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // 倍速菜单
+  // ============================================================
+
+  Widget _buildSpeedMenu() {
+    // 长按倍速锁定时：实际播放速度是 _playbackSpeed * 2
+    final displaySpeed = _isLongPressSpeedLocked
+        ? _playbackSpeed * 2
+        : _playbackSpeed;
+    return PopupMenuButton<double>(
+      tooltip: '倍速',
+      offset: const Offset(0, -180),
+      color: AppTheme.backgroundSecondary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+      ),
+      onSelected: (speed) {
+        // 用户主动选倍速 → 解除长按倍速锁定
+        if (_isLongPressSpeedLocked) {
+          _unlockLongPressSpeed();
+        }
+        _setSpeed(speed);
+      },
+      itemBuilder: (context) => _supportedSpeeds.map((speed) {
+        final selected = (speed - _playbackSpeed).abs() < 0.01;
+        return PopupMenuItem<double>(
+          height: 32,
+          value: speed,
+          child: Row(
+            children: [
+              Text(
+                _formatSpeed(speed),
+                style: TextStyle(
+                  color: selected ? AppTheme.accentColor : AppTheme.textPrimary,
+                  fontSize: 13,
+                ),
+              ),
+              if (selected) ...[
+                const Spacer(),
+                const Icon(Icons.check, color: AppTheme.accentColor, size: 16),
+              ],
+            ],
+          ),
+        );
+      }).toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        constraints: const BoxConstraints(minWidth: 38, minHeight: 30),
+        child: Center(
+          child: Text(
+            _formatSpeed(displaySpeed),
+            style: TextStyle(
+              color: _isLongPressSpeedLocked
+                  ? AppTheme.accentColor
+                  : Colors.white,
+              fontSize: 13,
+              fontWeight: _isLongPressSpeedLocked
+                  ? FontWeight.w700
+                  : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 画面比例菜单
+  // ============================================================
+
+  Widget _buildVideoFitMenu() {
+    return PopupMenuButton<VideoFitType>(
+      tooltip: '画面比例',
+      offset: const Offset(0, -180),
+      color: AppTheme.backgroundSecondary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+      ),
+      onSelected: _setVideoFit,
+      itemBuilder: (context) => VideoFitType.values.map((fit) {
+        final selected = fit == _videoFit;
+        return PopupMenuItem<VideoFitType>(
+          height: 32,
+          value: fit,
+          child: Row(
+            children: [
+              Text(
+                fit.desc,
+                style: TextStyle(
+                  color: selected ? AppTheme.accentColor : AppTheme.textPrimary,
+                  fontSize: 13,
+                ),
+              ),
+              if (selected) ...[
+                const Spacer(),
+                const Icon(Icons.check, color: AppTheme.accentColor, size: 16),
+              ],
+            ],
+          ),
+        );
+      }).toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        constraints: const BoxConstraints(minWidth: 38, minHeight: 30),
+        child: Center(
+          child: Text(
+            _videoFit.desc,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 剧集选择覆盖层
+  // ============================================================
+
+  Widget _buildEpisodeOverlay() {
+    return Positioned.fill(
+      // **重要**：用 ColoredBox 替换 Material，避免在 Stack 里
+      // 脱离 Scaffold 上下文时的灰屏渲染异常。
+      child: ColoredBox(
+        color: Colors.black.withValues(alpha: 0.6),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // 顶部可点击空白：关闭 sheet。
+            // 用 SizedBox 而不是 Expanded：Expanded 必须嵌在 Column/Row 中，
+            // 外层 Column 是 Flex，所以这里 Expanded 在 GestureDetector 内
+            // 行为不可靠（GestureDetector 不是 Flex 父级，Expanded 的 flex
+            // 没有效果；用 SizedBox 给一个非零高度让它真的能 hitTest）
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _showEpisodeSheet = false),
+              child: const SizedBox(height: 1, width: double.infinity),
+            ),
+            Container(
+              // maxHeight 减小：之前 320 太大，遮挡视频画面（占屏幕 50%+）
+              constraints: const BoxConstraints(maxHeight: 240),
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        const Text(
+                          '选集',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () =>
+                              setState(() => _showEpisodeSheet = false),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.white70,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 用 SizedBox 给 GridView 适度高度（Swift 版 ScrollView+maxHeight
+                  // 的精确对等实现），不依赖 Expanded/Column(max) 的复杂布局。
+                  // 高度从 256 减小到 168：6 集以内自适应不浪费空间，遮挡视频更少；
+                  // 集数过多时 GridView 在 168 内可滚。
+                  SizedBox(
+                    height: 168,
+                    child: GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 5,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 2.5,
+                          ),
+                      itemCount: widget.episodeNames.length,
+                      itemBuilder: (context, index) {
+                        final isSelected = index == widget.selectedEpisodeIndex;
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            widget.onSelectEpisode?.call(index);
+                            setState(() => _showEpisodeSheet = false);
+                          },
+                          child: Container(
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Colors.white.withValues(alpha: 0.25)
+                                  : Colors.white.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              widget.episodeNames[index],
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.white70,
+                                fontSize: 13,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 设置弹窗
+  // ============================================================
+
+  Widget _buildSettingsSheet() {
+    return Positioned.fill(
+      // **重要**：用 ColoredBox 替换 Material，避免在 Stack 里
+      // 脱离 Scaffold 上下文时的灰屏渲染异常。
+      child: ColoredBox(
+        color: Colors.black.withValues(alpha: 0.6),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // 顶部可点击空白：关闭 sheet。用 SizedBox 而不是 Expanded
+            // （见 _buildEpisodeOverlay 同款注释）
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _showSettingsSheet = false),
+              child: const SizedBox(height: 1, width: double.infinity),
+            ),
+            Container(
+              // maxHeight 减小：之前 480 太大遮挡视频画面（占屏幕 80%+）
+              constraints: const BoxConstraints(maxHeight: 360),
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        const Text(
+                          '播放设置',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () =>
+                              setState(() => _showSettingsSheet = false),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.white70,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 高度从 360 减小到 240：常见设置项 ~3-4 个（片头/片尾/播放信息），
+                  // shrinkWrap + NeverScrollableScrollPhysics 让 SingleChildScrollView
+                  // 收缩到内容高度，遮挡视频更少；超过 maxHeight 360 时仍可滚。
+                  SizedBox(
+                    height: 240,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 跳过片头
+                          const _SettingsRowLabel('跳过片头'),
+                          const SizedBox(height: 8),
+                          _SkipSecondsEditor(
+                            label: '片头',
+                            value: widget.skipIntroSeconds,
+                            onChange: (v) => widget.onSetSkipIntro?.call(v),
+                            presets: _skipPresets,
+                            maxSeconds: _skipMaxSeconds,
+                          ),
+                          const SizedBox(height: 16),
+                          // 跳过片尾
+                          const _SettingsRowLabel('跳过片尾'),
+                          const SizedBox(height: 8),
+                          _SkipSecondsEditor(
+                            label: '片尾',
+                            value: widget.skipOutroSeconds,
+                            onChange: (v) => widget.onSetSkipOutro?.call(v),
+                            presets: _skipPresets,
+                            maxSeconds: _skipMaxSeconds,
+                          ),
+                          const SizedBox(height: 16),
+                          if (_resolutionText.isNotEmpty) ...[
+                            const _SettingsRowLabel('播放信息'),
+                            const SizedBox(height: 8),
+                            Text(
+                              '分辨率: $_resolutionText',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                            if (_bitrateText.isNotEmpty)
+                              Text(
+                                '网速: $_bitrateText',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 画中画
+  // ============================================================
+
+  Future<void> _togglePiP() async {
+    // iOS 端：当前 Flutter 端没有原生 AVPictureInPictureController 实现，
+    // 直接调 VideoPlayerPip.toggle() 会因为 unsupported platform 静默失败。
+    // 给出明确提示让用户知道原因。
+    if (Platform.isIOS) {
+      _showMessage(
+        'iOS 端画中画：当前版本暂未集成 AVPictureInPictureController。\n'
+        '如需小窗播放，请先退出全屏并手动从控制中心选择 AirPlay 设备。',
+      );
+      return;
+    }
+    // 互斥：如果当前是全屏状态，先 await 退出全屏再进入 PiP
+    if (WindowFullScreen.instance.isActive || _isNativeFullscreen) {
+      await _exitFullScreen();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    // 附加当前 Player 到 PiP 模块（不创建新实例，保留播放状态）
+    VideoPlayerPip.instance.attachPlayer(_player);
+    await VideoPlayerPip.instance.toggle();
+  }
+
+  /// 投屏入口（DLNA/UPnP）
+  ///
+  /// **实现**：参考 PiliPlus-main/lib/pages/dlna/view.dart，使用
+  /// `dlna_dart: ^0.1.0` 库（纯 Dart 实现，跨 iOS / Android / macOS / Windows / Linux）。
+  ///
+  /// 流程：
+  /// 1. 跳到 DLNAPage（路由 /dlna）
+  /// 2. DLNAManager.start() 扫描局域网内 DLNA/UPnP 设备（30 秒超时）
+  /// 3. 用户选设备 → device.setUrl(playUrl, title: videoTitle) + device.play()
+  /// 4. DMR（智能电视 / 投影仪 / 音箱）开始播放
+  ///
+  /// **iOS 端权限**：需要 NSLocalNetworkUsageDescription + NSBonjourServices
+  /// 已配置在 ios/Runner/Info.plist。
+  Future<void> _toggleCast() async {
+    final playUrl = _player.state.playlist.medias.isNotEmpty
+        ? _player.state.playlist.medias.last.uri
+        : widget.url;
+    if (playUrl.isEmpty) {
+      _showMessage('投屏：当前没有可投屏的视频地址');
+      return;
+    }
+    Get.toNamed(
+      '/dlna',
+      parameters: {
+        'url': playUrl,
+        'title': _displayTitle.isNotEmpty
+            ? _displayTitle
+            : (widget.videoTitle ?? ''),
+      },
+    );
+  }
+
+  /// 用 ScaffoldMessenger 显示一条提示
+  void _showMessage(String text) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(text),
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.black87,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ============================================================
+  // 通用辅助方法
+  // ============================================================
+
+  String get _displayTitle {
+    final t = widget.videoTitle ?? '';
+    final e = widget.currentEpisodeName ?? '';
+    if (e.isNotEmpty) return '$t - $e';
+    return t;
+  }
+
+  Widget _gradientTopContainer({required Widget child}) {
+    // iOS 横屏时 notch 在 left/right (取决于 orientation),
+    // 必须用 MediaQuery.padding.left/right 偏移,否则视频名称/按钮被裁掉
+    final mediaPadding = MediaQuery.of(context).padding;
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.black87, Colors.transparent],
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: 11 + mediaPadding.top,
+          left: 4 + mediaPadding.left,
+          right: 4 + mediaPadding.right,
+        ),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _gradientBottomContainer({required Widget child}) {
+    // iPhone 横屏: 底部 home indicator 用 padding.bottom 偏移
+    // 两侧 notch 用 padding.left/right 偏移
+    final mediaPadding = MediaQuery.of(context).padding;
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.transparent, Colors.black87],
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: mediaPadding.bottom,
+          left: mediaPadding.left,
+          right: mediaPadding.right,
+        ),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _iconButton({
+    required IconData icon,
+    required double size,
+    double width = 36,
+    double height = 30,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Center(
+          child: Icon(icon, color: Colors.white, size: size),
+        ),
+      ),
+    );
+  }
+}
+
+enum PanAxis { horizontal, vertical }
+
+// ============================================================
+// 进度条拖动手势
+// ============================================================
+
+class _ProgressBarGesture extends StatelessWidget {
+  final double progress;
+  final void Function(double ratio) onSeekToRatio;
+  final void Function(double ratio) onDrag;
+  final VoidCallback onDragEnd;
+
+  const _ProgressBarGesture({
+    required this.progress,
+    required this.onSeekToRatio,
+    required this.onDrag,
+    required this.onDragEnd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (details) {
+            final ratio = (details.localPosition.dx / w).clamp(0.0, 1.0);
+            onDrag(ratio);
+            onSeekToRatio(ratio);
+          },
+          onHorizontalDragStart: (details) {
+            final ratio = (details.localPosition.dx / w).clamp(0.0, 1.0);
+            onDrag(ratio);
+          },
+          onHorizontalDragUpdate: (details) {
+            final ratio = (details.localPosition.dx / w).clamp(0.0, 1.0);
+            onDrag(ratio);
+          },
+          onHorizontalDragEnd: (_) => onDragEnd(),
+          child: CustomPaint(
+            size: Size(w, 20),
+            painter: _ProgressBarPainter(progress: progress),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProgressBarPainter extends CustomPainter {
+  final double progress;
+  _ProgressBarPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centerY = size.height / 2;
+    const trackHeight = 3.5;
+    const thumbRadius = 7.0;
+
+    final trackRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, centerY - trackHeight / 2, size.width, trackHeight),
+      Radius.circular(trackHeight / 2),
+    );
+    canvas.drawRRect(
+      trackRect,
+      Paint()..color = Colors.white.withValues(alpha: 0.2),
+    );
+
+    if (progress > 0) {
+      final progressRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          0,
+          centerY - trackHeight / 2,
+          size.width * progress,
+          trackHeight,
+        ),
+        Radius.circular(trackHeight / 2),
+      );
+      canvas.drawRRect(progressRect, Paint()..color = Colors.white);
+    }
+
+    final thumbX = (size.width * progress).clamp(
+      thumbRadius,
+      size.width - thumbRadius,
+    );
+    canvas.drawCircle(
+      Offset(thumbX, centerY),
+      thumbRadius,
+      Paint()..color = Colors.white,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ProgressBarPainter oldDelegate) =>
+      oldDelegate.progress != progress;
+}
+
+// ============================================================
+// 通用 UI 组件
+// ============================================================
+
+class _IndicatorBadge extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _IndicatorBadge({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(40),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 28),
+          const SizedBox(height: 6),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GestureHintBubble extends StatelessWidget {
+  final String text;
+  const _GestureHintBubble({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontFamily: 'monospace',
+        ),
+      ),
+    );
+  }
+}
+
+/// 跨 widget rebuild 持久化的 player 状态（静态缓存的值对象）
+///
+/// 字段：
+/// - [isNativeFullscreen]：是否在全屏（与 iOS immersive / 桌面 native 同步）
+/// - [isImmersive]：iOS 端是否处于 immersive 模式
+///
+/// **生命周期**：由 [_VideoPlayerWidgetState._stateCache] 按 widget.key 持有；
+/// widget Element 重建时 initState 从缓存读回，状态在 Element 生命周期外保留。
+/// 用户离开 detail 页面（`dispose`）后**不主动清空**，下次用同 key 复用
+/// （detail view 用固定 `ValueKey('detail_player')`）。
+class _PersistedPlayerState {
+  bool isNativeFullscreen = false;
+  bool isImmersive = false;
+  /// 续播是否已应用：跨 widget Element 重建持久化。
+  /// - false: 首次 init 或 url 变化后 init, 触发续播
+  /// - true: widget 已被重建 (典型场景: 切换全屏/退出全屏), 不再触发续播
+  /// 防止切换全屏时 Element 重建跑 initState 误用陈旧 widget.resumeSeconds
+  /// 把 player 从当前位置 (例如 5min) seek 回原续播位置 (例如 30s)
+  bool resumeApplied = false;
+}
+
+class _SettingsRowLabel extends StatelessWidget {
+  final String text;
+  const _SettingsRowLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+}
+
+/// 跳过片头/片尾时间编辑器
+/// 包含：自定义秒数输入框 + 快捷预设按钮
+class _SkipSecondsEditor extends StatefulWidget {
+  final String label;
+  final int value;
+  final ValueChanged<int> onChange;
+  final List<int> presets;
+  final int maxSeconds;
+
+  const _SkipSecondsEditor({
+    required this.label,
+    required this.value,
+    required this.onChange,
+    required this.presets,
+    required this.maxSeconds,
+  });
+
+  @override
+  State<_SkipSecondsEditor> createState() => _SkipSecondsEditorState();
+}
+
+class _SkipSecondsEditorState extends State<_SkipSecondsEditor> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value.toString());
+    _focusNode = FocusNode();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        _submit();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _SkipSecondsEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && !_focusNode.hasFocus) {
+      _controller.text = widget.value.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) {
+      _controller.text = widget.value.toString();
+      setState(() => _errorText = null);
+      return;
+    }
+    final n = int.tryParse(text);
+    if (n == null) {
+      setState(() => _errorText = '请输入数字');
+      return;
+    }
+    if (n < 0) {
+      setState(() => _errorText = '不能小于 0');
+      return;
+    }
+    if (n > widget.maxSeconds) {
+      setState(() => _errorText = '不能超过 ${widget.maxSeconds} 秒');
+      return;
+    }
+    setState(() => _errorText = null);
+    if (n != widget.value) {
+      widget.onChange(n);
+    }
+  }
+
+  void _applyPreset(int s) {
+    _controller.text = s.toString();
+    setState(() => _errorText = null);
+    widget.onChange(s);
+    _focusNode.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 输入框 + 提交按钮
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _errorText != null
+                        ? Colors.red
+                        : Colors.white.withValues(alpha: 0.1),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Icon(
+                        Icons.timer_outlined,
+                        color: Colors.white70,
+                        size: 16,
+                      ),
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                        cursorColor: AppTheme.accentColor,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          isDense: true,
+                          hintText: '秒',
+                          hintStyle: TextStyle(
+                            color: Colors.white24,
+                            fontSize: 14,
+                          ),
+                        ),
+                        onSubmitted: (_) {
+                          _submit();
+                          _focusNode.unfocus();
+                        },
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        '秒',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                _submit();
+                _focusNode.unfocus();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  '应用',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (_errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            _errorText!,
+            style: const TextStyle(color: Colors.red, fontSize: 11),
+          ),
+        ],
+        const SizedBox(height: 8),
+        // 快捷预设
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: widget.presets.map((s) {
+            final selected = widget.value == s;
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _applyPreset(s),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppTheme.accentColor
+                      : Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  s == 0 ? '关闭' : '${s}秒',
+                  style: TextStyle(
+                    color: selected ? Colors.white : Colors.white70,
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
