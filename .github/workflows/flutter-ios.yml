@@ -8,14 +8,9 @@ name: Flutter iOS IPA
 # 否则 NodeJSBridge.swift 链接不到 node_start / node_exit。
 
 on:
+  # 只留手动触发。这个仓库是用 Contents API 逐文件上传的，每次 PUT 都产生一个 commit，
+  # 开着 push 自动触发会在批量上传时一次刷出几百个 run，把 Actions 队列堵死。
   workflow_dispatch:
-  push:
-    paths:
-      - 'lib/**'
-      - 'assets/**'
-      - 'ios/**'
-      - 'pubspec.yaml'
-      - '.github/workflows/flutter-ios.yml'
 
 jobs:
   build:
