@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 
-/// 主题配置 —— 纯黑底 + 蓝紫强调
+/// 主题配置 —— 纯黑/纯白双底 + 蓝紫强调
 ///
-/// 配色策略：
-///   - 背景一律走纯黑 #000，靠 BackgroundService 的渐变层叠出层次，
-///     不靠"更亮的灰"来分块，否则在 OLED 上整片发灰、观感发闷。
-///   - 强调色只有一组：蓝 #3E63FF → 紫 #8A5CFF，能渐变的地方都走渐变，
-///     选中态/进度/下划线/徽章统一色相，避免多色打架。
-///   - 文字只用三档灰度，第四档开始就显得脏。
+/// **浅色/深色切换的实现方式**：
+///   颜色不再是 `static const`，而是 `static get`，读 [_dark] 开关。
+///   这样 200 多个 `AppTheme.textPrimary` 引用点一行都不用改，
+///   只要 ThemeService 切换时调 [AppTheme.setDark] 再触发一次重建即可。
+///
+///   代价：`const TextStyle(color: AppTheme.textPrimary)` 这种写法不再合法
+///   （常量表达式不能读 getter），全项目只有 9 处，已改掉。
+///
+/// 强调色（蓝紫渐变）深浅两套共用 —— 换色相会让品牌感断掉，
+/// 浅色模式只需要把底和字反过来。
 class AppTheme {
-  // ===== 强调色 =====
+  /// 当前是否深色。由 ThemeService 在启动和切换时写入。
+  static bool _dark = true;
+
+  static bool get isDark => _dark;
+
+  static void setDark(bool value) {
+    _dark = value;
+  }
+
+  // ===== 强调色（两套通用）=====
   static const Color accentColor = Color(0xFF3E63FF); // 主蓝
   static const Color accentLightColor = Color(0xFF8A5CFF); // 尾紫
   static const Color accentPurple = Color(0xFF8A5CFF);
@@ -28,29 +41,49 @@ class AppTheme {
     colors: [accentColor, accentLightColor],
   );
 
-  // ===== 背景（纯黑系）=====
-  static const Color backgroundPrimary = Color(0xFF000000);
-  static const Color backgroundSecondary = Color(0xFF0D0D0F);
-  static const Color backgroundTertiary = Color(0x0FFFFFFF); // white 6%
-  static const Color backgroundElevated = Color(0x14FFFFFF); // white 8%
+  // ===== 背景 =====
+  static Color get backgroundPrimary =>
+      _dark ? const Color(0xFF000000) : const Color(0xFFF4F5F7);
 
-  // ===== 半透明卡片色 =====
-  // 让 BackgroundService 的全局背景层透出来，否则每张卡片都是一块死黑。
-  // 0xCC = 204/255 ≈ 80%，0xE6 = 230/255 ≈ 90%
-  static const Color backgroundCard = Color(0xCC111114);
-  static const Color backgroundCardElevated = Color(0xE6111114);
-  static const Color backgroundNavBar = Color(0xCC121214);
+  static Color get backgroundSecondary =>
+      _dark ? const Color(0xFF0D0D0F) : const Color(0xFFFFFFFF);
+
+  /// 深色是白 6%，浅色是黑 4%
+  static Color get backgroundTertiary =>
+      _dark ? const Color(0x0FFFFFFF) : const Color(0x0A000000);
+
+  /// 深色是白 8%，浅色是黑 6%
+  static Color get backgroundElevated =>
+      _dark ? const Color(0x14FFFFFF) : const Color(0x0F000000);
+
+  // ===== 卡面（半透明，让背景层透出）=====
+  static Color get backgroundCard =>
+      _dark ? const Color(0xCC111114) : const Color(0xE6FFFFFF);
+
+  static Color get backgroundCardElevated =>
+      _dark ? const Color(0xE6111114) : const Color(0xF2FFFFFF);
+
+  static Color get backgroundNavBar =>
+      _dark ? const Color(0xCC121214) : const Color(0xE6FFFFFF);
 
   // ===== 文字 =====
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFA0A0A8);
-  static const Color textTertiary = Color(0xFF6A6A72);
+  static Color get textPrimary =>
+      _dark ? const Color(0xFFFFFFFF) : const Color(0xFF111114);
+
+  static Color get textSecondary =>
+      _dark ? const Color(0xFFA0A0A8) : const Color(0xFF5C5C66);
+
+  static Color get textTertiary =>
+      _dark ? const Color(0xFF6A6A72) : const Color(0xFF9A9AA3);
 
   // ===== 描边 =====
-  static const Color borderLight = Color(0x14FFFFFF); // white 8%
-  static const Color borderMedium = Color(0x24FFFFFF); // white 14%
+  static Color get borderLight =>
+      _dark ? const Color(0x14FFFFFF) : const Color(0x14000000);
 
-  // ===== 语义色 =====
+  static Color get borderMedium =>
+      _dark ? const Color(0x24FFFFFF) : const Color(0x24000000);
+
+  // ===== 语义色（两套通用，浅色下略压暗保证对比度）=====
   static const Color successColor = Color(0xFF38C172);
   static const Color warningColor = Color(0xFFF2A93B);
   static const Color errorColor = Color(0xFFF05252);
@@ -75,8 +108,7 @@ class AppTheme {
   static const double cardSpacing = 8;
   static const double cardPadding = 0;
 
-  /// 海报宽高比。电影/剧集海报标准约 2:3，这里取 1.47（宽 = 高 / 1.47），
-  /// 跟主流影视 App 的视觉密度一致，比 2:3 少留白。
+  /// 海报宽高比（宽 = 高 / 1.47）
   static const double posterRatio = 1.47;
 
   // ===== 字号 =====
@@ -88,93 +120,105 @@ class AppTheme {
   static const double fontTitle3 = 18;
   static const double fontTitle2 = 20;
 
-  /// 暗色主题
-  static ThemeData get darkTheme {
+  /// 深色主题
+  static ThemeData get darkTheme => _build(dark: true);
+
+  /// 浅色主题
+  static ThemeData get lightTheme => _build(dark: false);
+
+  static ThemeData _build({required bool dark}) {
+    final bg = dark ? const Color(0xFF000000) : const Color(0xFFF4F5F7);
+    final surface = dark ? const Color(0xFF0D0D0F) : const Color(0xFFFFFFFF);
+    final card = dark ? const Color(0xCC111114) : const Color(0xE6FFFFFF);
+    final t1 = dark ? const Color(0xFFFFFFFF) : const Color(0xFF111114);
+    final t2 = dark ? const Color(0xFFA0A0A8) : const Color(0xFF5C5C66);
+    final t3 = dark ? const Color(0xFF6A6A72) : const Color(0xFF9A9AA3);
+
     return ThemeData(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: backgroundPrimary,
-      colorScheme: const ColorScheme.dark(
+      brightness: dark ? Brightness.dark : Brightness.light,
+      scaffoldBackgroundColor: bg,
+      colorScheme: ColorScheme(
+        brightness: dark ? Brightness.dark : Brightness.light,
         primary: accentColor,
+        onPrimary: Colors.white,
         secondary: accentLightColor,
-        surface: backgroundSecondary,
+        onSecondary: Colors.white,
+        surface: surface,
+        onSurface: t1,
         error: errorColor,
+        onError: Colors.white,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          color: textPrimary,
+          color: t1,
           fontSize: fontHeadline,
           fontWeight: FontWeight.w700,
         ),
-        iconTheme: IconThemeData(color: textSecondary),
+        iconTheme: IconThemeData(color: t2),
       ),
       cardTheme: CardThemeData(
-        color: backgroundCard,
+        color: card,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(cardRadius),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: backgroundTertiary,
+        backgroundColor: dark ? const Color(0x0FFFFFFF) : const Color(0x0A000000),
         selectedColor: accentColor.withValues(alpha: 0.18),
-        labelStyle: const TextStyle(color: textSecondary, fontSize: fontSubhead),
+        labelStyle: TextStyle(color: t2, fontSize: fontSubhead),
         side: BorderSide.none,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.transparent,
         selectedItemColor: accentColor,
-        unselectedItemColor: textTertiary,
+        unselectedItemColor: t3,
         type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(fontSize: 10),
+        selectedLabelStyle:
+            const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(fontSize: 10),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: backgroundCard,
+        fillColor: card,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusXL),
           borderSide: BorderSide.none,
         ),
-        hintStyle: const TextStyle(color: textTertiary, fontSize: fontSubhead),
+        hintStyle: TextStyle(color: t3, fontSize: fontSubhead),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spacingLG,
           vertical: spacingMD,
         ),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: accentColor,
-        linearTrackColor: Color(0x1FFFFFFF),
+        linearTrackColor: dark ? const Color(0x1FFFFFFF) : const Color(0x1F000000),
       ),
-      sliderTheme: const SliderThemeData(
+      sliderTheme: SliderThemeData(
         activeTrackColor: accentColor,
-        inactiveTrackColor: Color(0x33FFFFFF),
+        inactiveTrackColor: dark ? const Color(0x33FFFFFF) : const Color(0x33000000),
         thumbColor: Colors.white,
-        overlayColor: Color(0x333E63FF),
+        overlayColor: const Color(0x333E63FF),
       ),
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         headlineLarge: TextStyle(
-            color: textPrimary, fontSize: 28, fontWeight: FontWeight.w800),
-        headlineMedium: TextStyle(
-            color: textPrimary,
-            fontSize: fontTitle2,
-            fontWeight: FontWeight.w700),
-        headlineSmall: TextStyle(
-            color: textPrimary,
-            fontSize: fontTitle3,
-            fontWeight: FontWeight.w600),
-        bodyLarge: TextStyle(color: textPrimary, fontSize: fontBody),
-        bodyMedium: TextStyle(color: textSecondary, fontSize: fontSubhead),
-        bodySmall: TextStyle(color: textTertiary, fontSize: fontFootnote),
-        labelLarge: TextStyle(
-            color: textPrimary, fontSize: fontBody, fontWeight: FontWeight.w600),
-        labelMedium: TextStyle(color: textSecondary, fontSize: fontSubhead),
-        labelSmall: TextStyle(color: textTertiary, fontSize: fontCaption),
+            color: t1, fontSize: 28, fontWeight: FontWeight.w800),
+        headlineMedium:
+            TextStyle(color: t1, fontSize: fontTitle2, fontWeight: FontWeight.w700),
+        headlineSmall:
+            TextStyle(color: t1, fontSize: fontTitle3, fontWeight: FontWeight.w600),
+        bodyLarge: TextStyle(color: t1, fontSize: fontBody),
+        bodyMedium: TextStyle(color: t2, fontSize: fontSubhead),
+        bodySmall: TextStyle(color: t3, fontSize: fontFootnote),
+        labelLarge:
+            TextStyle(color: t1, fontSize: fontBody, fontWeight: FontWeight.w600),
+        labelMedium: TextStyle(color: t2, fontSize: fontSubhead),
+        labelSmall: TextStyle(color: t3, fontSize: fontCaption),
       ),
       useMaterial3: true,
     );
