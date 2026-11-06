@@ -1,0 +1,15 @@
+# iOS pbxproj 必须用 LF（macOS Xcode / nanaimo 不接受 CRLF）
+# 用文件路径精确匹配，避免误伤二进制文件
+ios/Runner.xcodeproj/project.pbxproj text eol=lf
+ios/Podfile text eol=lf
+ios/Podfile.lock text eol=lf
+ios/Runner/Info.plist text eol=lf
+ios/Runner.xcodeproj/xcshareddata/** text eol=lf
+ios/Flutter/Generated.xcconfig text eol=lf
+ios/Flutter/Debug.xcconfig text eol=lf
+ios/Flutter/Release.xcconfig text eol=lf
+
+# Dart / Flutter 项目源码也用 LF（autocrlf=true 会被 CRLF 替换，需显式覆盖）
+lib/**/*.dart text eol=lf
+pubspec.yaml text eol=lf
+pubspec.lock text eol=lf
