@@ -59,7 +59,8 @@ jobs:
           chmod +x tools/fetch_libnode.sh
           ./tools/fetch_libnode.sh
           echo "--- jniLibs ---"
-          ls -lh android/app/src/main/jniLibs/arm64-v8a/ 2>/dev/null || { echo "✗ jniLibs 没生成"; exit 1; }
+          ls -lh android/app/src/main/jniLibs/arm64-v8a/  2>/dev/null || { echo "✗ arm64 jniLibs 没生成"; exit 1; }
+          ls -lh android/app/src/main/jniLibs/x86_64/    2>/dev/null || { echo "✗ x86_64 jniLibs 没生成"; exit 1; }
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos || true
@@ -71,8 +72,14 @@ jobs:
       - name: Patch incompatible plugin gradle
         run: python3 tools/patch_flutter_plugins.py
 
+      # --split-per-abi 按 ABI 拆成独立 APK，每个只带自己那份 libnode：
+      #   app-arm64-v8a-release.apk    真机（约 55MB）
+      #   app-armeabi-v7a-release.apk  老设备
+      #   app-x86_64-release.apk       MuMu/雷电模拟器
+      # 模拟器的 ARM 转译层跑不动 libnode 的 V8，起 node 必崩，
+      # 必须用原生 x86_64 包。
       - name: Build APK
-        run: flutter build apk --release --target-platform android-arm64
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64,android-arm,android-x64
 
       - name: Upload APK
         if: success()
